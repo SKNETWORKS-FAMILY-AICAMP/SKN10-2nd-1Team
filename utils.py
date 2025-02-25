@@ -23,7 +23,10 @@ def base_model(X, y, best_params=None):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # 모델 학습
-    model = RandomForestClassifier(random_state=42, **best_params)
+    if best_params is None:
+        model = RandomForestClassifier(random_state=42)
+    else:
+        model = RandomForestClassifier(random_state=42, **best_params)
     model.fit(X_train, y_train)
 
     # 모델 평가
