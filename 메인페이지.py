@@ -34,10 +34,6 @@ df = pd.read_csv(file_path)
 # 컬럼명 매핑
 df.columns = ["Customer ID", "Credit Score", "Country", "Gender", "Age", "Tenure", "Balance", "Products Number", "Credit Card", "Active Member", "Estimated Salary", "Churn"]
 
-# 필터링된 데이터 출력          ,필터링이 제대로 이루어지도록 해야함
-st.subheader("📊 필터링된 데이터")
-st.dataframe(df.style.set_properties(**{"background-color": "#f9f9f9", "border": "1px solid #ddd", "color": "black"}))
-
 # 중앙 정렬을 위한 컨테이너
 with st.container():
     st.header("🔍 필터 옵션")
@@ -49,11 +45,11 @@ with st.container():
     with col2:
         gender = st.radio("⚧ 성별", df["Gender"].unique())
     with col3:
-        credit_card = st.radio("💳 신용카드 보유 여부", ["No", "Yes"], index=1)
+        credit_card = st.radio("💳 신용카드 보유 여부", [0, 1])
     with col4:
-        active_member = st.radio("🟢 활성 회원 여부", ["No", "Yes"], index=1)
+        active_member = st.radio("🟢 활성 회원 여부", [0, 1])
     with col5:
-        churn = st.radio("🔄 고객 이탈 여부", ["No", "Yes"], index=0)
+        churn = st.radio("🔄 고객 이탈 여부", [0, 1])
     
     credit_score_range = st.slider("📊 신용점수", int(df["Credit Score"].min()), int(df["Credit Score"].max()), (int(df["Credit Score"].min()), int(df["Credit Score"].max())))
     age_range = st.slider("👤 나이", int(df["Age"].min()), int(df["Age"].max()), (int(df["Age"].min()), int(df["Age"].max())))
@@ -69,7 +65,15 @@ filtered_df = df[(df["Credit Score"] >= credit_score_range[0]) & (df["Credit Sco
                  (df["Products Number"] >= products_number_range[0]) & (df["Products Number"] <= products_number_range[1]) &
                  (df["Estimated Salary"] >= estimated_salary_range[0]) & (df["Estimated Salary"] <= estimated_salary_range[1]) &
                  (df["Country"] == country) & (df["Gender"] == gender) &
-                 (df["Credit Card"] == (1 if credit_card == "Yes" else 0)) &
-                 (df["Active Member"] == (1 if active_member == "Yes" else 0)) &
-                 (df["Churn"] == (1 if churn == "Yes" else 0))]
+                 (df["Credit Card"] == credit_card) &
+                 (df["Active Member"] == active_member) &
+                 (df["Churn"] == churn)]
 
+# 필터링된 데이터 출력
+st.subheader("📊 필터링된 데이터")
+st.dataframe(filtered_df.style.set_properties(**{"background-color": "#f9f9f9", "border": "1px solid #ddd", "color": "black"}))
+
+# 필터링된 데이터를 CSV로 저장하고 다운로드 버튼 추가
+if not filtered_df.empty:
+    csv = filtered_df.to_csv(index=False).encode('utf-8')
+    st.download_button(label="📥 필터링된 데이터 다운로드", data=csv, file_name="filtered_data.csv", mime="text/csv")
