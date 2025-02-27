@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.impute import SimpleImputer
 from imblearn.over_sampling import SMOTE
+from tqdm import tqdm
 
 # 랜덤 시드 고정
 np.random.seed(42)
@@ -62,10 +63,8 @@ preprocessed_data, processed_data = preprocess_data(data, numeric_features, cate
 # 데이터 분할 (7:2:1 비율)
 X = preprocessed_data
 y = processed_data['churn']
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.125, random_state=42)
-
-print(len(X_train), len(X_val), len(X_test))
+X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.3, random_state=42)
+X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42)
 
 # SMOTE 적용
 smote = SMOTE(random_state=42)
@@ -128,7 +127,7 @@ class EarlyStopping:
             self.counter = 0
 
 def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs=50):
-    early_stopping = EarlyStopping(patience=7, min_delta=0.001)
+    early_stopping = EarlyStopping(patience=10, min_delta=0.001)
     train_losses = []
     val_aucs = []
     val_losses = []
@@ -140,7 +139,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
         total_loss = 0
         train_labels = []
         train_outputs = []
-        for inputs, labels in train_loader:
+        for inputs, labels in tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}"):
             inputs, labels = inputs.to(device), labels.to(device)
             optimizer.zero_grad()
             outputs = model(inputs)
