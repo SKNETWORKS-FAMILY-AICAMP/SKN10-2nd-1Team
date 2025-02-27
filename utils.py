@@ -1,7 +1,6 @@
 import pandas as pd
-from datetime import datetime
 from sklearn.model_selection import train_test_split, RandomizedSearchCV, cross_val_score
-from sklearn.ensemble import RandomForestClassifier, 
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler, PowerTransformer
 from sklearn.metrics import accuracy_score, classification_report, roc_auc_score, roc_curve, auc
 from imblearn.over_sampling import SMOTE
@@ -10,7 +9,6 @@ import matplotlib.pyplot as plt
 from scipy.stats import randint
 import random
 import os
-import lightgbm as lgb
 
 def reset_seeds(func, seed=42):
     random.seed(seed)
