@@ -19,8 +19,8 @@ X = pd.get_dummies(df.drop('churn', axis=1), drop_first=True)
 y = df['churn']
 
 # 데이터 분할 (train, validation, test)
-X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.3, random_state=random_state)
-X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=random_state)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.125, random_state=42)
 
 # SMOTE로 오버샘플링 수행 (train set에만 적용)
 smote = SMOTE(random_state=random_state)

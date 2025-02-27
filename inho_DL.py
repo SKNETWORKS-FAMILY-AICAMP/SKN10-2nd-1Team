@@ -8,12 +8,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, log_loss, accuracy_score
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.impute import SimpleImputer
-from sklearn.metrics import accuracy_score
-from sklearn.ensemble import RandomForestClassifier
 from imblearn.over_sampling import SMOTE
 
 # 랜덤 시드 고정
@@ -43,15 +41,6 @@ def preprocess_data(data, numeric_features, categorical_features):
     imputer = SimpleImputer(strategy='mean')
     data[numeric_features] = imputer.fit_transform(data[numeric_features])
 
-    # 이상치 제거 (예시: IQR 방법)
-    # for col in numeric_features:
-    #     Q1 = data[col].quantile(0.25)
-    #     Q3 = data[col].quantile(0.75)
-    #     IQR = Q3 - Q1
-    #     lower_bound = Q1 - 1.5 * IQR
-    #     upper_bound = Q3 + 1.5 * IQR
-    #     data = data[(data[col] >= lower_bound) & (data[col] <= upper_bound)]
-
     # 전처리기를 구성: 수치형 데이터에는 StandardScaler, 범주형 데이터에는 OneHotEncoder 적용
     preprocessor = ColumnTransformer(
         transformers=[
@@ -70,84 +59,32 @@ def preprocess_data(data, numeric_features, categorical_features):
 # 데이터 전처리
 preprocessed_data, processed_data = preprocess_data(data, numeric_features, categorical_features)
 
-# 데이터 분할
+# 데이터 분할 (7:2:1 비율)
 X = preprocessed_data
 y = processed_data['churn']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.125, random_state=42)
 
+print(len(X_train), len(X_val), len(X_test))
+
 # SMOTE 적용
 smote = SMOTE(random_state=42)
 X_train_smote, y_train_smote = smote.fit_resample(X_train, y_train)
 
-# 모델 정의
-model = RandomForestClassifier(random_state=42, n_estimators=100)
-
-# 모델 학습
-model.fit(X_train_smote, y_train_smote)
-
-# 검증 데이터로 예측
-y_val_pred = model.predict(X_val)
-val_accuracy = accuracy_score(y_val, y_val_pred)
-print(f'Validation Accuracy: {val_accuracy:.4f}')
-
-# 테스트 데이터로 예측
-y_test_pred = model.predict(X_test)
-test_accuracy = accuracy_score(y_test, y_test_pred)
-print(f'Test Accuracy: {test_accuracy:.4f}')
-
 # PyTorch 데이터셋과 데이터 로더
-train_dataset = TensorDataset(torch.tensor(X_train.values).float(), torch.tensor(y_train.values).float())
+train_dataset = TensorDataset(torch.tensor(X_train_smote.values).float(), torch.tensor(y_train_smote.values).float())
 val_dataset = TensorDataset(torch.tensor(X_val.values).float(), torch.tensor(y_val.values).float())
+test_dataset = TensorDataset(torch.tensor(X_test.values).float(), torch.tensor(y_test.values).float())
 train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
 val_loader = DataLoader(val_dataset, batch_size=64)
-
-# EDA 과정
-# 데이터 헤드 보여주기
-print("Data Overview")
-print(data.head())
-
-# 데이터 통계 보여주기
-print("Statistical Summary")
-print(data.describe())
-
-# 데이터의 결측치 시각화
-print("Missing Values")
-missing_data = data.isnull().sum()
-print(missing_data[missing_data > 0])
-
-# 데이터 분포 시각화
-print("Data Distribution")
-for feature in data.columns:
-    if data[feature].dtype in ['int64', 'float64']:
-        sns.histplot(data[feature], kde=True)
-        plt.title(f'Distribution of {feature}')
-        plt.show()
-    else:
-        count = data[feature].value_counts()
-        sns.barplot(x=count.index, y=count.values)
-        plt.title(f'Distribution of {feature}')
-        plt.show()
-
-# 상관 관계 시각화
-print("Correlation Matrix")
-numeric_data = data.select_dtypes(include=['int64', 'float64'])
-correlation = numeric_data.corr()
-plt.figure(figsize=(10, 8))
-sns.heatmap(correlation, annot=True, cmap='coolwarm')
-plt.title('Correlation Matrix')
-plt.show()
-
-# 전처리된 데이터 표시
-print("Preprocessed Data")
-print(preprocessed_data.head())
+test_loader = DataLoader(test_dataset, batch_size=64)
 
 # 모델 정의
 class ChurnModel(nn.Module):
     def __init__(self):
         super(ChurnModel, self).__init__()
         self.network = nn.Sequential(
-            nn.Linear(11, 256),
+            nn.Linear(X_train_smote.shape[1], 256),
             nn.ReLU(),
             nn.Dropout(0.4),
             nn.Linear(256, 128),
@@ -164,10 +101,9 @@ class ChurnModel(nn.Module):
         return self.network(x)
 
 # 모델 인스턴스 생성 및 설정
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model = ChurnModel().to(device)
 criterion = nn.BCELoss()
-optimizer = optim.Adam(model.parameters(), lr=0.0001)  # 조정된 학습률
+optimizer = optim.Adam(model.parameters(), lr=0.0001)
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10, verbose=True)
 
 # 얼리 스토퍼 및 모델 학습 함수
@@ -276,3 +212,22 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
 
 # 학습 실행
 train_model(model, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs=50)
+
+# 테스트 데이터로 예측
+model.eval()
+test_labels = []
+test_outputs = []
+with torch.no_grad():
+    for inputs, labels in test_loader:
+        inputs, labels = inputs.to(device), labels.to(device)
+        outputs = model(inputs)
+        test_labels.extend(labels.tolist())
+        test_outputs.extend(outputs.squeeze().tolist())
+
+test_auc = roc_auc_score(test_labels, test_outputs)
+test_loss = log_loss(test_labels, test_outputs)
+test_accuracy = accuracy_score(test_labels, [1 if o > 0.5 else 0 for o in test_outputs])
+
+print(f'Test AUC: {test_auc:.4f}')
+print(f'Test Loss: {test_loss:.4f}')
+print(f'Test Accuracy: {test_accuracy:.4f}')
