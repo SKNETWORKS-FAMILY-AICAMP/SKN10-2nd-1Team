@@ -1,8 +1,8 @@
 import pandas as pd
 from datetime import datetime
-from sklearn.model_selection import train_test_split, RandomizedSearchCV
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split, RandomizedSearchCV, cross_val_score
+from sklearn.ensemble import RandomForestClassifier, 
+from sklearn.preprocessing import StandardScaler, PowerTransformer
 from sklearn.metrics import accuracy_score, classification_report, roc_auc_score, roc_curve, auc
 from imblearn.over_sampling import SMOTE
 import numpy as np
@@ -10,13 +10,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import randint
 import random
 import os
-
-def make_submit(test_df, features, model):
-    today = datetime.today().strftime('%Y-%m-%d')
-    submit_df = pd.read_csv('./data/sample_submission.csv')
-
-    submit_df['채무 불이행 확률'] = model.predict(test_df[features])
-    submit_df.to_csv(f'./data/submission_{today}.csv', index=False)
+import lightgbm as lgb
 
 def reset_seeds(func, seed=42):
     random.seed(seed)
@@ -64,15 +58,7 @@ def base_model(X, y):
     model.fit(X_train, y_train)
 
     # 모델 평가
-    y_pred = model.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    auc = roc_auc_score(y_test, y_pred)
-    report = classification_report(y_test, y_pred)
-
-    print(f'Accuracy: {accuracy:.4f}')
-    print(f'AUC: {auc:.4f}')
-    print('Classification Report:')
-    print(report)
+    model_report(model, X_test, y_test)
 
     return model
 
@@ -94,25 +80,38 @@ def preprocessing(df):
     df = pd.get_dummies(df, columns=['country'])
     df['gender'] = df['gender'].apply(lambda x: 1 if x == 'Male' else 0)
 
-    # balance 0 값 처리  (balance_0 컬럼 추가 후 0값을 중앙값으로 대체)
-    df['balance_0'] = df['balance'].apply(lambda x: 1 if x == 0 else 0)
-    median_balance = df.loc[df['balance'] != 0, 'balance'].median()
-    df.loc[df['balance'] == 0, 'balance'] = median_balance
-
     # products_number 2 이상 데이터 처리
-    # df['products_number'] = df['products_number'].apply(lambda x: 2 if x >= 2 else 1)
+    # df['products_number'] = df['products_number'].apply(lambda x: 3 if x >= 3 else x)
 
-    # PowerTransformer를 사용한 데이터 변환 (역효과)
+    # 수치형 데이터 범주화    
+    #df['credit_score_seg'] = df['credit_score'].apply(lambda x: 0 if x <= 349 else (1 if x <= 500 else (2 if x <= 590 else (3 if x <= 620 else (4 if x <= 660 else (5 if x <= 690 else (6 if x <= 720 else 7)))))))
+    #df['balance_seg'] = df['balance'].apply(lambda x: 0 if x <= 50000 else (1 if x <= 90000 else (2 if x <= 127000 else 3)))
+    #df['age_seg'] = df['age'].apply(lambda x: 0 if x <= 17 else (1 if x <= 36 else (2 if x <= 55 else 3)))
+    #df['estimated_salary_seg'] = df['estimated_salary'].apply(lambda x: 0 if x <= 51002 else (1 if x <= 100193 else (2 if x <= 149388 else 3)))
+    
+    # balance 0 값 처리  (balance_0 컬럼 추가 후 0값을 중앙값으로 대체)
+    #df['balance_0'] = df['balance'].apply(lambda x: 1 if x == 0 else 0)
+    #median_balance = df.loc[df['balance'] != 0, 'balance'].median()
+    #df.loc[df['balance'] == 0, 'balance'] = median_balance
+
+    # PowerTransformer를 사용한 데이터 변환
+    pt = PowerTransformer(method='yeo-johnson')
+    df['credit_score'] = pt.fit_transform(df['credit_score'].values.reshape(-1, 1))
+    df['age'] = pt.fit_transform(df['age'].values.reshape(-1, 1))
+    #df['balance'] = pt.fit_transform(df['balance'].values.reshape(-1, 1))
+    #df['estimated_salary'] = pt.fit_transform(df['estimated_salary'].values.reshape(-1, 1))
 
     # 'credit_score', 'age', 'balance', 'estimated_salary' 데이터 스케일링
     scale_columns = ['credit_score', 'age', 'balance', 'estimated_salary', ]
     scaler = StandardScaler()
     df = pd.concat([df.drop(scale_columns, axis=1), pd.DataFrame(scaler.fit_transform(df[scale_columns]), columns=scale_columns)], axis=1)
 
-    return df
+    df_target = df['churn']
+    df_feature = df.drop(['churn', 'customer_id',], axis=1)
+    return df_feature, df_target
 
-def roc_auc_curve_plt(y_test, y_pred):
-    fpr, tpr, thresholds = roc_curve(y_test, y_pred)
+def roc_auc_curve_plt(y_test, y_pred_proba):
+    fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
     roc_auc = auc(fpr, tpr)
 
     plt.figure(figsize=(10, 10))
@@ -125,4 +124,19 @@ def roc_auc_curve_plt(y_test, y_pred):
     plt.title('Receiver Operating Characteristic')
     plt.legend(loc='lower right')
     plt.show()
+
+def model_report(model, X_test, y_test):
+    y_pred = model.predict(X_test)
+    y_pred_proba = model.predict_proba(X_test)[:, 1]
+    accuracy = accuracy_score(y_test, y_pred)
+    auc = roc_auc_score(y_test, y_pred_proba)
+    report = classification_report(y_test, y_pred)
+
+    print(f'Accuracy: {accuracy:.4f}')
+    print(f'AUC: {auc:.4f}')
+    print('Classification Report:')
+    print(report)
+
+    roc_auc_curve_plt(y_test, y_pred_proba)
+
 
