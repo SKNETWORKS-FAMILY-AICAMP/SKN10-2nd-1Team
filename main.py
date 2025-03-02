@@ -65,12 +65,12 @@ filtered_df = df[
     (df['gender'] == gender) &
     (df['credit_card'] == credit_card) &
     (df['active_member'] == active_member) &
-    (df['credit_score'] >= credit_score) &
-    (df['age'] >= age) &
-    (df['tenure'] >= tenure) &
-    (df['balance'] >= balance) &
+    (df['credit_score'] <= credit_score) &
+    (df['age'] <= age) &
+    (df['tenure'] <= tenure) &
+    (df['balance'] <= balance) &
     (df['products_number'] == products_number) &
-    (df['estimated_salary'] >= estimated_salary)
+    (df['estimated_salary'] <= estimated_salary)
 ]
 
 # 필터링된 데이터 표시
