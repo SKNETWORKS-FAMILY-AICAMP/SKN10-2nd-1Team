@@ -138,3 +138,4 @@ def model_report(model, X_test, y_test):
     roc_auc_curve_plt(y_test, y_pred_proba)
 
 
+
