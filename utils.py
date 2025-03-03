@@ -102,8 +102,8 @@ def preprocessing(df):
     # 'credit_score', 'age', 'balance', 'estimated_salary' 데이터 스케일링
     scale_columns = ['credit_score', 'age', 'balance', 'estimated_salary', ]
     scaler = StandardScaler()
-    df = pd.concat([df.drop(scale_columns, axis=1), pd.DataFrame(scaler.fit_transform(df[scale_columns]), columns=scale_columns)], axis=1)
-
+    df[scale_columns] = scaler.fit_transform(df[scale_columns])
+    
     df_target = df['churn']
     df_feature = df.drop(['churn', 'customer_id',], axis=1)
     return df_feature, df_target
