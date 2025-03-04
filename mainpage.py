@@ -2,7 +2,15 @@ import streamlit as st
 import pandas as pd
 import joblib
 import warnings
+from groq import Groq
+
 warnings.filterwarnings("ignore")
+
+# Groq API 키 설정
+GROQ_API_KEY = "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"
+
+# Groq 클라이언트 초기화
+client = Groq(api_key=GROQ_API_KEY)
 
 # 스타일 설정
 st.set_page_config(page_title="은행 고객 이탈 예측", layout="wide")
@@ -74,6 +82,53 @@ def predict_churn(filtered_data):
     probabilities = pipeline.predict_proba(X_new)[:, 1]
     
     return predictions, probabilities
+
+def get_churn_reasons_and_solutions(risk_level, num_customers, input_parameters, high_risk, medium_risk, low_risk, high_risk_info, medium_risk_info, low_risk_info, filters):
+    # 입력 파라미터를 요약하여 크기를 줄임
+    
+    prompt = f"""
+    다음 입력을 기반으로 반드시 **한국어**를 사용하여 이탈 원인 및 해결 방안을 작성하시오.:
+    위험 수준: {risk_level}
+    고객 수: {num_customers}
+    높은 위험: 이탈 확률 70% 이상
+    중간 위험: 이탈 확률 40% ~ 70% 미만
+    낮은 위험: 이탈 확률 40% 미만
+    높은 위험 고객 수: {high_risk}
+    중간 위험 고객 수: {medium_risk}
+    낮은 위험 고객 수: {low_risk}
+    높은 위험 고객 정보: {high_risk_info}
+    중간 위험 고객 정보: {medium_risk_info}
+    낮은 위험 고객 정보: {low_risk_info}
+    필터 정보: {filters}
+    주요 관찰 결과:
+    - 나이가 많은 고객과 높은 계좌 잔액을 가진 고객은 이탈 확률이 높습니다.
+    - 활동적인 회원은 이탈 확률이 낮습니다.
+
+    출력 형식:
+    원인
+    - 원인 1
+    - 원인 2
+    - 원인 3
+    - 원인 4
+
+    해결방안
+    - 해결방안 1
+    - 해결방안 2
+    - 해결방안 3
+    - 해결방안 4
+    """
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        model="qwen-2.5-coder-32b",
+    )
+    response = chat_completion.choices[0].message.content
+
+    return response
 
 def main():
     st.title('은행 고객 이탈 예측 시스템')
@@ -296,17 +351,17 @@ def main():
                         if not high_risk_df.empty:
                             high_risk_df['이탈 확률'] = high_risk_df['이탈 확률'].apply(lambda x: f"{x:.1%}")
                             st.dataframe(style_dataframe(high_risk_df[display_columns].sort_values('이탈 확률', ascending=False)),
-                                       height=400, use_container_width=True)
+                                         height=400, use_container_width=True)
                         else:
                             st.info("높은 위험군에 해당하는 고객이 없습니다.")
                     
                     with tab2:
                         medium_risk_df = results_df[(results_df['이탈 확률'] >= 0.4) & 
-                                                  (results_df['이탈 확률'] < 0.7)].copy()
+                                                    (results_df['이탈 확률'] < 0.7)].copy()
                         if not medium_risk_df.empty:
                             medium_risk_df['이탈 확률'] = medium_risk_df['이탈 확률'].apply(lambda x: f"{x:.1%}")
                             st.dataframe(style_dataframe(medium_risk_df[display_columns].sort_values('이탈 확률', ascending=False)),
-                                       height=400, use_container_width=True)
+                                         height=400, use_container_width=True)
                         else:
                             st.info("중간 위험군에 해당하는 고객이 없습니다.")
                     
@@ -315,18 +370,53 @@ def main():
                         if not low_risk_df.empty:
                             low_risk_df['이탈 확률'] = low_risk_df['이탈 확률'].apply(lambda x: f"{x:.1%}")
                             st.dataframe(style_dataframe(low_risk_df[display_columns].sort_values('이탈 확률', ascending=False)),
-                                       height=400, use_container_width=True)
+                                         height=400, use_container_width=True)
                         else:
                             st.info("낮은 위험군에 해당하는 고객이 없습니다.")
                     
-                    # 위험도 기준 설명
-                    st.markdown("""
-                    ### 위험도 기준
-                    - 🔴 높은 위험: 이탈 확률 70% 이상
-                    - 🟡 중간 위험: 이탈 확률 40% ~ 70% 미만
-                    - 🟢 낮은 위험: 이탈 확률 40% 미만
-                    """)
+                    # 각 위험 수준에 속한 고객들의 정보 계산
+                    def calculate_risk_info(df):
+                        numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
+                        categorical_cols = df.select_dtypes(include=['object', 'category']).columns
+                        
+                        numeric_info = df[numeric_cols].mean().to_dict()
+                        categorical_info = df[categorical_cols].apply(lambda x: x.value_counts().to_dict()).to_dict()
+                        
+                        return {**numeric_info, **categorical_info}
                     
+                    high_risk_info = calculate_risk_info(high_risk_df)
+                    medium_risk_info = calculate_risk_info(medium_risk_df)
+                    low_risk_info = calculate_risk_info(low_risk_df)
+                    
+                    # 필터 정보 수집
+                    filters = {
+                        "신용점수": credit_score,
+                        "나이": age,
+                        "거래기간": tenure,
+                        "계좌잔액": balance,
+                        "국가": country,
+                        "성별": gender,
+                        "상품 수": products_number,
+                        "신용카드 보유": credit_card,
+                        "활성 회원": active_member
+                    }
+                    
+                    # Groq API를 사용하여 이탈 원인 및 해결 방안 제공
+                    churn_reasons_solutions = get_churn_reasons_and_solutions(
+                        "전체", 
+                        len(results_df), 
+                        results_df.to_dict(), 
+                        high_risk, 
+                        medium_risk, 
+                        low_risk,
+                        high_risk_info,
+                        medium_risk_info,
+                        low_risk_info,
+                        filters
+                    )
+                    st.markdown("### 고객 이탈 원인 및 해결 방안")
+                    st.markdown(churn_reasons_solutions)
+
                     # 구분선 추가
                     st.markdown("---")
                     
