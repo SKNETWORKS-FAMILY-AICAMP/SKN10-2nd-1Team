@@ -80,6 +80,25 @@
   
  **2) 결측치 확인**
 - 결측치 확인 결과 : 결측치가 없음
+  
+ **3) 데이터 분석**
+ 
+![이탈률](./img/churn.png) 
+![나라](./img/country.png)
+![성별](./img/gender.png)
+![age](./img/age.png)
+![credit_score](./img/credit_score.png)
+![credit_card](./img/credit_card.png)
+![products_num](./img/products_num.png)
+![tenure](./img/tenure.png)
+![balance](./img/balance.png)
+![hitmap](./img/hitmap.png)
+![GB_feature](./img/GB_feature.png)
+![RF_feature](./img/RF_feature.png)
+![full_count](./img/full_count.png)
+
+
+
 
 # 4. 실행 결과
 
