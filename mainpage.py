@@ -549,74 +549,7 @@ def main():
                     # 구분선 추가
                     st.markdown("---")
                     
-                    # 데이터 다운로드 섹션
-                    st.markdown("### 예측 결과 다운로드")
-                    
-                    # 다운로드 버튼들을 4개의 컬럼으로 배치
-                    download_cols = st.columns(4)
-                    
-                    # 전체 데이터 다운로드
-                    with download_cols[0]:
-                        all_data = results_df[display_columns].copy()
-                        all_data['이탈 확률'] = all_data['이탈 확률'].apply(lambda x: f"{x:.1%}")
-                        csv_all = all_data.to_csv(index=False).encode('utf-8-sig')
-                        
-                        st.download_button(
-                            label="전체 데이터",
-                            data=csv_all,
-                            file_name="전체_고객_예측결과.csv",
-                            mime="text/csv",
-                            help="전체 고객의 예측 결과를 다운로드합니다.",
-                            use_container_width=True
-                        )
-                    
-                    # 높은 위험 데이터 다운로드
-                    with download_cols[1]:
-                        high_risk_data = results_df[results_df['이탈 확률'] >= 0.7][display_columns].copy()
-                        high_risk_data['이탈 확률'] = high_risk_data['이탈 확률'].apply(lambda x: f"{x:.1%}")
-                        csv_high = high_risk_data.to_csv(index=False).encode('utf-8-sig')
-                        
-                        st.download_button(
-                            label="높은 위험",
-                            data=csv_high,
-                            file_name="높은_위험_고객_예측결과.csv",
-                            mime="text/csv",
-                            help="이탈 확률이 70% 이상인 고객의 예측 결과를 다운로드합니다.",
-                            use_container_width=True
-                        )
-                    
-                    # 중간 위험 데이터 다운로드
-                    with download_cols[2]:
-                        medium_risk_data = results_df[
-                            (results_df['이탈 확률'] >= 0.4) & 
-                            (results_df['이탈 확률'] < 0.7)
-                        ][display_columns].copy()
-                        medium_risk_data['이탈 확률'] = medium_risk_data['이탈 확률'].apply(lambda x: f"{x:.1%}")
-                        csv_medium = medium_risk_data.to_csv(index=False).encode('utf-8-sig')
-                        
-                        st.download_button(
-                            label="중간 위험",
-                            data=csv_medium,
-                            file_name="중간_위험_고객_예측결과.csv",
-                            mime="text/csv",
-                            help="이탈 확률이 40-70%인 고객의 예측 결과를 다운로드합니다.",
-                            use_container_width=True
-                        )
-                    
-                    # 낮은 위험 데이터 다운로드
-                    with download_cols[3]:
-                        low_risk_data = results_df[results_df['이탈 확률'] < 0.4][display_columns].copy()
-                        low_risk_data['이탈 확률'] = low_risk_data['이탈 확률'].apply(lambda x: f"{x:.1%}")
-                        csv_low = low_risk_data.to_csv(index=False).encode('utf-8-sig')
-                        
-                        st.download_button(
-                            label="낮은 위험",
-                            data=csv_low,
-                            file_name="낮은_위험_고객_예측결과.csv",
-                            mime="text/csv",
-                            help="이탈 확률이 40% 미만인 고객의 예측 결과를 다운로드합니다.",
-                            use_container_width=True
-                        )
+
             else:
                 st.error('필터링된 데이터가 없습니다. 필터 조건을 조정해주세요.')
 
