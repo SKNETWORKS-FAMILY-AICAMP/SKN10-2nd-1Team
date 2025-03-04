@@ -10,6 +10,8 @@ from sklearn.impute import SimpleImputer
 from sklearn.compose import ColumnTransformer
 from inho_model import load_data, preprocess_data, load_model, predict, ChurnModel
 
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 warnings.filterwarnings("ignore")
 
 # Groq API 키 설정
@@ -150,7 +152,7 @@ def predict_churn(filtered_data, model_select:str, df=pd.read_csv('./data/Bank C
         input_dim = preprocessed_df.shape[1]
         print(f'Input dimension: {input_dim}')  # 전처리된 데이터의 열 수 확인
         # 모델 불러오기
-        model = load_model('./model/churn_model.pth', input_dim=input_dim)
+        model = load_model('model\churn_model_DL.pth', input_dim=input_dim)
         model.eval()
 
         # 예측 수행
