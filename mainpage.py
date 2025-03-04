@@ -56,7 +56,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def predict_churn(filtered_data, model_select:str, df=pd.read_csv('./data/Bank Customer Churn Prediction.csv')):
-    if model_select == '민경':
+    if model_select == 'Gradient Boosting':
         # customer_id 컬럼이 있다면 제거
         if 'customer_id' in filtered_data.columns:
             filtered_data = filtered_data.drop('customer_id', axis=1)
@@ -80,7 +80,7 @@ def predict_churn(filtered_data, model_select:str, df=pd.read_csv('./data/Bank C
         
         return predictions, probabilities
     
-    elif model_select == '윤홍':
+    elif model_select == 'Random Forest':
         # 전처리
         filtered_data['country_France'] = filtered_data['country'].apply(lambda x: 1 if x == 'France' else 0)
         filtered_data['country_Germany'] = filtered_data['country'].apply(lambda x: 1 if x == 'Germany' else 0)
@@ -118,7 +118,7 @@ def predict_churn(filtered_data, model_select:str, df=pd.read_csv('./data/Bank C
 
         return predictions, probabilities
 
-    if model_select == 'inho_DL':
+    if model_select == 'Deep Learning':
         # 범주형과 수치형 특성 정의
         categorical_features = ['country', 'gender', 'credit_card', 'active_member']
         numeric_features = ['credit_score', 'age', 'tenure', 'balance', 'products_number', 'estimated_salary']
@@ -287,7 +287,11 @@ def main():
         [0, 1],
         default=[0, 1]
     )
-    
+    churn = st.sidebar.multiselect(
+        '이탈 여부',
+        [0, 1],
+        default=[0, 1]
+    )
     # 데이터 필터링
     filtered_df = df[
         (df['credit_score'].between(credit_score[0], credit_score[1])) &
@@ -298,18 +302,33 @@ def main():
         (df['gender'].isin(gender)) &
         (df['products_number'].isin(products_number)) &
         (df['credit_card'].isin(credit_card)) &
-        (df['active_member'].isin(active_member))
+        (df['active_member'].isin(active_member)) &
+        (df['churn'].isin(churn))
     ]
     
     # 필터링된 데이터 표시
     st.write(f"필터링된 고객 수: {len(filtered_df):,}명")
     st.dataframe(filtered_df)
     
+    accuracy_dict = {
+        'Gradient Boosting': 0.8730,
+        'Random Forest': 0.8340,
+        'Deep Learning': 0.8640
+    }
+    auc_dict = {
+        'Gradient Boosting': 0.8633,
+        'Random Forest': 0.8589,
+        'Deep Learning': 0.8612
+    }
+
     # 예측 버튼과 모델 선택 박스
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        model_select = st.selectbox('모델 선택', ['민경', '윤홍', 'inho_DL'], index=0)
+        model_select = st.selectbox('모델 선택', ['Gradient Boosting', 'Random Forest', 'Deep Learning'], index=0)
         if st.button('이탈 예측하기', use_container_width=True):
+            accuracy = accuracy_dict[model_select]
+            auc = auc_dict[model_select]
+
             if len(filtered_df) > 0:
                 with st.spinner('예측 중...'):
                     results_df = filtered_df.copy()
@@ -356,7 +375,7 @@ def main():
                     """, unsafe_allow_html=True)
                     
                     # 메트릭을 5개의 동일한 크기 컬럼으로 나누기
-                    col1, col2, col3, col4, col5 = st.columns(5)
+                    col1, col2, col3, col4, col5, col6, col7 = st.columns([3,2,2,2,2,2,2])
                     
                     with col1:
                         st.metric(
@@ -391,7 +410,18 @@ def main():
                             f"{low_risk:,}명",
                             f"{(low_risk/total_customers)*100:.1f}%"
                         )
-                    
+
+                    with col6:
+                        st.metric(
+                            "Accuracy",
+                            f"{accuracy}",
+                        )
+
+                    with col7:
+                        st.metric(
+                            "AUC",
+                            f"{auc}",
+                        )
                     # 구분선 추가
                     st.markdown("---")
                     
