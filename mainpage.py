@@ -3,8 +3,22 @@ import pandas as pd
 import joblib
 import warnings
 import pickle
-from sklearn.preprocessing import PowerTransformer, StandardScaler
+import torch
+from groq import Groq
+from sklearn.preprocessing import PowerTransformer, StandardScaler, OneHotEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.compose import ColumnTransformer
+from inho_model import load_data, preprocess_data, load_model, predict, ChurnModel
+
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 warnings.filterwarnings("ignore")
+
+# Groq API 키 설정
+GROQ_API_KEY = "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"
+
+# Groq 클라이언트 초기화
+client = Groq(api_key=GROQ_API_KEY)
 
 # 스타일 설정
 st.set_page_config(page_title="은행 고객 이탈 예측", layout="wide")
@@ -41,8 +55,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-
-def predict_churn(filtered_data, model_select:str, df=pd.read_csv('./data/Bank Customer Churn Prediction.csv')):  # df 하드코딩 했습니다
+def predict_churn(filtered_data, model_select:str, df=pd.read_csv('./data/Bank Customer Churn Prediction.csv')):
     if model_select == '민경':
         # customer_id 컬럼이 있다면 제거
         if 'customer_id' in filtered_data.columns:
@@ -105,11 +118,106 @@ def predict_churn(filtered_data, model_select:str, df=pd.read_csv('./data/Bank C
 
         return predictions, probabilities
 
+    if model_select == 'inho_DL':
+        # 범주형과 수치형 특성 정의
+        categorical_features = ['country', 'gender', 'credit_card', 'active_member']
+        numeric_features = ['credit_score', 'age', 'tenure', 'balance', 'products_number', 'estimated_salary']
+
+        # 더미 고객 데이터 생성
+        dummy_customers = pd.DataFrame({
+            'country': ['France', 'Spain', 'Germany'],
+            'gender': ['Female', 'Male', 'Female'],
+            'credit_card': [1, 0, 1],
+            'active_member': [1, 0, 1],
+            'credit_score': [600, 700, 800],
+            'age': [40, 50, 60],
+            'tenure': [3, 4, 5],
+            'balance': [60000, 70000, 80000],
+            'products_number': [2, 1, 3],
+            'estimated_salary': [50000, 60000, 70000]
+        })
+
+        # 전처리된 데이터의 열 수 확인
+        imputer = SimpleImputer(strategy='mean')
+        dummy_customers[numeric_features] = imputer.fit_transform(dummy_customers[numeric_features])
+        filtered_data[numeric_features] = imputer.transform(filtered_data[numeric_features])
+
+        preprocessor = ColumnTransformer(
+            transformers=[
+                ('num', StandardScaler(), numeric_features),
+                ('cat', OneHotEncoder(), categorical_features)
+            ])
+
+        preprocessor.fit(dummy_customers)
+        preprocessed_data = preprocessor.transform(filtered_data)
+        preprocessed_df = pd.DataFrame(preprocessed_data, columns=numeric_features + list(preprocessor.named_transformers_['cat'].get_feature_names_out(categorical_features)))
+        input_dim = preprocessed_df.shape[1]
+        print(f'Input dimension: {input_dim}')  # 전처리된 데이터의 열 수 확인
+        # 모델 불러오기
+        model = load_model('model\churn_model_DL.pth', input_dim=input_dim)
+        model.eval()
+
+        # 예측 수행
+        X_tensor = torch.tensor(preprocessed_df.values).float().to(device)
+        with torch.no_grad():
+            outputs = model(X_tensor)
+            probabilities = outputs.squeeze().cpu().numpy()
+            predictions = (probabilities > 0.5).astype(int)
+
+        return predictions, probabilities
+
+def get_churn_reasons_and_solutions(risk_level, num_customers, input_parameters, high_risk, medium_risk, low_risk, high_risk_info, medium_risk_info, low_risk_info, filters):
+    # 입력 파라미터를 요약하여 크기를 줄임
+    
+    prompt = f"""
+    다음 입력을 기반으로 반드시 **한국어**를 사용하여 이탈 원인 및 해결 방안을 작성하시오.:
+    위험 수준: {risk_level}
+    고객 수: {num_customers}
+    높은 위험: 이탈 확률 70% 이상
+    중간 위험: 이탈 확률 40% ~ 70% 미만
+    낮은 위험: 이탈 확률 40% 미만
+    높은 위험 고객 수: {high_risk}
+    중간 위험 고객 수: {medium_risk}
+    낮은 위험 고객 수: {low_risk}
+    높은 위험 고객 정보: {high_risk_info}
+    중간 위험 고객 정보: {medium_risk_info}
+    낮은 위험 고객 정보: {low_risk_info}
+    필터 정보: {filters}
+    주요 관찰 결과:
+    - 나이가 많은 고객과 높은 계좌 잔액을 가진 고객은 이탈 확률이 높습니다.
+    - 활동적인 회원은 이탈 확률이 낮습니다.
+
+    출력 형식:
+    원인
+    - 원인 1
+    - 원인 2
+    - 원인 3
+    - 원인 4
+
+    해결방안
+    - 해결방안 1
+    - 해결방안 2
+    - 해결방안 3
+    - 해결방안 4
+    """
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        model="qwen-2.5-coder-32b",
+    )
+    response = chat_completion.choices[0].message.content
+
+    return response
+
 def main():
     st.title('은행 고객 이탈 예측 시스템')
     
     # 데이터 로드
-    df = pd.read_csv('./data/Bank Customer Churn Prediction.csv')
+    df = load_data('./data/Bank Customer Churn Prediction.csv')
     
     # 표시할 컬럼 설정
     display_columns = ['customer_id', 'country', 'age', 'balance', '이탈 예측', '이탈 확률']
@@ -200,7 +308,7 @@ def main():
     # 예측 버튼과 모델 선택 박스
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        model_select = st.selectbox('모델 선택', ['민경', '윤홍'], index=0)
+        model_select = st.selectbox('모델 선택', ['민경', '윤홍', 'inho_DL'], index=0)
         if st.button('이탈 예측하기', use_container_width=True):
             if len(filtered_df) > 0:
                 with st.spinner('예측 중...'):
@@ -328,17 +436,17 @@ def main():
                         if not high_risk_df.empty:
                             high_risk_df['이탈 확률'] = high_risk_df['이탈 확률'].apply(lambda x: f"{x:.1%}")
                             st.dataframe(style_dataframe(high_risk_df[display_columns].sort_values('이탈 확률', ascending=False)),
-                                       height=400, use_container_width=True)
+                                         height=400, use_container_width=True)
                         else:
                             st.info("높은 위험군에 해당하는 고객이 없습니다.")
                     
                     with tab2:
                         medium_risk_df = results_df[(results_df['이탈 확률'] >= 0.4) & 
-                                                  (results_df['이탈 확률'] < 0.7)].copy()
+                                                    (results_df['이탈 확률'] < 0.7)].copy()
                         if not medium_risk_df.empty:
                             medium_risk_df['이탈 확률'] = medium_risk_df['이탈 확률'].apply(lambda x: f"{x:.1%}")
                             st.dataframe(style_dataframe(medium_risk_df[display_columns].sort_values('이탈 확률', ascending=False)),
-                                       height=400, use_container_width=True)
+                                         height=400, use_container_width=True)
                         else:
                             st.info("중간 위험군에 해당하는 고객이 없습니다.")
                     
@@ -347,18 +455,62 @@ def main():
                         if not low_risk_df.empty:
                             low_risk_df['이탈 확률'] = low_risk_df['이탈 확률'].apply(lambda x: f"{x:.1%}")
                             st.dataframe(style_dataframe(low_risk_df[display_columns].sort_values('이탈 확률', ascending=False)),
-                                       height=400, use_container_width=True)
+                                         height=400, use_container_width=True)
                         else:
                             st.info("낮은 위험군에 해당하는 고객이 없습니다.")
+
                     
-                    # 위험도 기준 설명
                     st.markdown("""
                     ### 위험도 기준
                     - 🔴 높은 위험: 이탈 확률 70% 이상
                     - 🟡 중간 위험: 이탈 확률 40% ~ 70% 미만
                     - 🟢 낮은 위험: 이탈 확률 40% 미만
                     """)
+                                        # 각 위험 수준에 속한 고객들의 정보 계산
+                    def calculate_risk_info(df):
+                        numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
+                        categorical_cols = df.select_dtypes(include=['object', 'category']).columns
+                        
+                        numeric_info = df[numeric_cols].mean().to_dict()
+                        categorical_info = df[categorical_cols].apply(lambda x: x.value_counts().to_dict()).to_dict()
+                        
+                        return {**numeric_info, **categorical_info}
                     
+                    high_risk_info = calculate_risk_info(high_risk_df)
+                    medium_risk_info = calculate_risk_info(medium_risk_df)
+                    low_risk_info = calculate_risk_info(low_risk_df)
+                    
+                    # 필터 정보 수집
+                    filters = {
+                        "신용점수": credit_score,
+                        "나이": age,
+                        "거래기간": tenure,
+                        "계좌잔액": balance,
+                        "국가": country,
+                        "성별": gender,
+                        "상품 수": products_number,
+                        "신용카드 보유": credit_card,
+                        "활성 회원": active_member
+                    }
+                    
+                    # Groq API를 사용하여 이탈 원인 및 해결 방안 제공
+                    churn_reasons_solutions = get_churn_reasons_and_solutions(
+                        "전체", 
+                        len(results_df), 
+                        results_df.to_dict(), 
+                        high_risk, 
+                        medium_risk, 
+                        low_risk,
+                        high_risk_info,
+                        medium_risk_info,
+                        low_risk_info,
+                        filters
+                    )
+                    st.markdown("### 고객 이탈 원인 및 해결 방안")
+                    st.markdown(churn_reasons_solutions)
+                    # 위험도 기준 설명
+                   
+
                     # 구분선 추가
                     st.markdown("---")
                     
@@ -435,3 +587,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
