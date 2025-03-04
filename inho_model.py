@@ -1,10 +1,9 @@
 import torch
 import torch.nn as nn
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, PowerTransformer
-from imblearn.over_sampling import SMOTE
-from torch.utils.data import DataLoader, TensorDataset
+from sklearn.preprocessing import StandardScaler, PowerTransformer, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
 
 # 랜덤 시드 고정
 torch.manual_seed(42)
@@ -41,35 +40,39 @@ def preprocess_data(data):
 
 # 모델 정의
 class ChurnModel(nn.Module):
-    def __init__(self):
+    def __init__(self, input_dim):
         super(ChurnModel, self).__init__()
-        self.fc1 = nn.Linear(12, 64)
-        self.fc2 = nn.Linear(64, 32)
-        self.fc3 = nn.Linear(32, 1)
-        self.relu = nn.ReLU()
-        self.sigmoid = nn.Sigmoid()
+        self.network = nn.Sequential(
+            nn.Linear(input_dim, 256),
+            nn.ReLU(),
+            nn.Dropout(0.4),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(64, 1),
+            nn.Sigmoid()
+        )
 
     def forward(self, x):
-        x = self.relu(self.fc1(x))
-        x = self.relu(self.fc2(x))
-        x = self.sigmoid(self.fc3(x))
-        return x
+        return self.network(x)
 
 # 모델 로드 함수
-def load_model(filepath):
-    model = ChurnModel()
+def load_model(filepath, input_dim):
+    model = ChurnModel(input_dim=input_dim)
     model.load_state_dict(torch.load(filepath))
     model.eval()
     return model
 
 # 예측 함수
-def predict(model, data):
-    X = data[['credit_score', 'gender', 'age', 'tenure', 'balance',
-              'products_number', 'credit_card', 'active_member', 'estimated_salary',
-              'country_France', 'country_Germany', 'country_Spain']]
-    X_tensor = torch.tensor(X.values).float()
+def predict(model, data, preprocessor, numeric_features, categorical_features):
+    preprocessed_data = preprocessor.transform(data)
+    preprocessed_df = pd.DataFrame(preprocessed_data, columns=numeric_features + list(preprocessor.named_transformers_['cat'].get_feature_names_out(categorical_features)))
+    X_tensor = torch.tensor(preprocessed_df.values).float().to(device)
     with torch.no_grad():
         outputs = model(X_tensor)
-        probabilities = outputs.squeeze().numpy()
+        probabilities = outputs.squeeze().cpu().numpy()
         predictions = (probabilities > 0.5).astype(int)
     return predictions, probabilities
