@@ -204,10 +204,11 @@ def main():
         if st.button('이탈 예측하기', use_container_width=True):
             if len(filtered_df) > 0:
                 with st.spinner('예측 중...'):
+                    results_df = filtered_df.copy()
                     predictions, probabilities = predict_churn(filtered_df, model_select)
                     
                     # 결과를 데이터프레임에 추가
-                    results_df = filtered_df.copy()
+                    
                     results_df['이탈 예측'] = ['이탈 예정' if p == 1 else '유지 예정' for p in predictions]
                     results_df['이탈 확률'] = probabilities
                     
