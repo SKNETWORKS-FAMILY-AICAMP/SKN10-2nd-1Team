@@ -46,10 +46,13 @@ actuals = data['churn'].values
 accuracy = accuracy_score(actuals, predictions)
 print(f'전체 데이터의 예측 정확도: {accuracy:.4f}')
 
-# 이탈자와 비이탈자 분리
 churn_indices = actuals == 1
 non_churn_indices = actuals == 0
-
+# 이탈자와 비이탈자 총수
+total_churn = churn_indices.sum()
+total_non_churn = non_churn_indices.sum()
+print(f'이탈자 총수: {total_churn}')
+print(f'비이탈자 총수: {total_non_churn}')
 # 이탈자 예측 정확도
 churn_accuracy = accuracy_score(actuals[churn_indices], predictions[churn_indices])
 print(f'이탈자 예측 정확도: {churn_accuracy:.4f}')
@@ -57,3 +60,12 @@ print(f'이탈자 예측 정확도: {churn_accuracy:.4f}')
 # 비이탈자 예측 정확도
 non_churn_accuracy = accuracy_score(actuals[non_churn_indices], predictions[non_churn_indices])
 print(f'비이탈자 예측 정확도: {non_churn_accuracy:.4f}')
+
+
+# 이탈자 중에 이탈로 판단한 숫자
+correct_churn_predictions = (predictions[churn_indices] == 1).sum()
+print(f'이탈자 중에 이탈로 판단한 숫자: {correct_churn_predictions}')
+
+# 비이탈자 중에 비이탈로 판단한 숫자
+correct_non_churn_predictions = (predictions[non_churn_indices] == 0).sum()
+print(f'비이탈자 중에 비이탈로 판단한 숫자: {correct_non_churn_predictions}')

@@ -12,7 +12,6 @@ from sklearn.metrics import roc_auc_score, log_loss, accuracy_score
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.impute import SimpleImputer
-from imblearn.over_sampling import SMOTE
 from tqdm import tqdm
 
 # 랜덤 시드 고정
@@ -34,7 +33,7 @@ data = load_data()
 data = data.drop(['customer_id'], axis=1)
 
 # 범주형과 수치형 특성 분리
-categorical_features = ['country', 'gender']
+categorical_features = ['country', 'gender', 'credit_card', 'active_member']
 numeric_features = ['credit_score', 'age', 'tenure', 'balance', 'products_number', 'estimated_salary']
 
 def preprocess_data(data, numeric_features, categorical_features):
@@ -63,15 +62,11 @@ preprocessed_data, processed_data = preprocess_data(data, numeric_features, cate
 # 데이터 분할 (7:2:1 비율)
 X = preprocessed_data
 y = processed_data['churn']
-X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.3, random_state=42)
-X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42)
-
-# SMOTE 적용
-smote = SMOTE(random_state=42)
-X_train_smote, y_train_smote = smote.fit_resample(X_train, y_train)
+X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
+X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp)
 
 # PyTorch 데이터셋과 데이터 로더
-train_dataset = TensorDataset(torch.tensor(X_train_smote.values).float(), torch.tensor(y_train_smote.values).float())
+train_dataset = TensorDataset(torch.tensor(X_train.values).float(), torch.tensor(y_train.values).float())
 val_dataset = TensorDataset(torch.tensor(X_val.values).float(), torch.tensor(y_val.values).float())
 test_dataset = TensorDataset(torch.tensor(X_test.values).float(), torch.tensor(y_test.values).float())
 train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
@@ -83,7 +78,7 @@ class ChurnModel(nn.Module):
     def __init__(self):
         super(ChurnModel, self).__init__()
         self.network = nn.Sequential(
-            nn.Linear(15, 256),
+            nn.Linear(15, 256),  # 15는 전처리된 데이터의 열 수입니다.
             nn.ReLU(),
             nn.Dropout(0.4),
             nn.Linear(256, 128),
@@ -98,7 +93,7 @@ class ChurnModel(nn.Module):
 
     def forward(self, x):
         return self.network(x)
-
+print(X_train)
 # 모델 인스턴스 생성 및 설정
 model = ChurnModel().to(device)
 criterion = nn.BCELoss()
@@ -179,6 +174,10 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
             break
 
         scheduler.step(val_loss)
+
+    # 모델 저장
+    torch.save(model.state_dict(), "churn_model.pth")
+    print("Model saved as churn_model.pth")
 
     # Plotting the results
     epochs = range(1, len(train_losses) + 1)

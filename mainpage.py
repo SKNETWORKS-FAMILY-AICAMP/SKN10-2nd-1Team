@@ -123,23 +123,9 @@ def predict_churn(filtered_data, model_select:str, df=pd.read_csv('./data/Bank C
         categorical_features = ['country', 'gender', 'credit_card', 'active_member']
         numeric_features = ['credit_score', 'age', 'tenure', 'balance', 'products_number', 'estimated_salary']
 
-        # 더미 고객 데이터 생성
-        dummy_customers = pd.DataFrame({
-            'country': ['France', 'Spain', 'Germany'],
-            'gender': ['Female', 'Male', 'Female'],
-            'credit_card': [1, 0, 1],
-            'active_member': [1, 0, 1],
-            'credit_score': [600, 700, 800],
-            'age': [40, 50, 60],
-            'tenure': [3, 4, 5],
-            'balance': [60000, 70000, 80000],
-            'products_number': [2, 1, 3],
-            'estimated_salary': [50000, 60000, 70000]
-        })
-
         # 전처리된 데이터의 열 수 확인
         imputer = SimpleImputer(strategy='mean')
-        dummy_customers[numeric_features] = imputer.fit_transform(dummy_customers[numeric_features])
+        df[numeric_features] = imputer.fit_transform(df[numeric_features])
         filtered_data[numeric_features] = imputer.transform(filtered_data[numeric_features])
 
         preprocessor = ColumnTransformer(
@@ -148,13 +134,14 @@ def predict_churn(filtered_data, model_select:str, df=pd.read_csv('./data/Bank C
                 ('cat', OneHotEncoder(), categorical_features)
             ])
 
-        preprocessor.fit(dummy_customers)
-        preprocessed_data = preprocessor.transform(filtered_data)
-        preprocessed_df = pd.DataFrame(preprocessed_data, columns=numeric_features + list(preprocessor.named_transformers_['cat'].get_feature_names_out(categorical_features)))
+        preprocessed_data = preprocessor.fit_transform(df)
+        preprocessed_filtered_data = preprocessor.transform(filtered_data)
+        preprocessed_df = pd.DataFrame(preprocessed_filtered_data, columns=numeric_features + list(preprocessor.named_transformers_['cat'].get_feature_names_out(categorical_features)))
         input_dim = preprocessed_df.shape[1]
         print(f'Input dimension: {input_dim}')  # 전처리된 데이터의 열 수 확인
+
         # 모델 불러오기
-        model = load_model('model\churn_model_DL.pth', input_dim=input_dim)
+        model = load_model('model/churn_model_DL.pth', input_dim=input_dim)
         model.eval()
 
         # 예측 수행

@@ -20,23 +20,25 @@ def load_data(filepath):
 
 # 데이터 전처리
 def preprocess_data(data):
-    data = data.drop(['customer_id'], axis=1)
-    data['country_France'] = data['country'].apply(lambda x: 1 if x == 'France' else 0)
-    data['country_Germany'] = data['country'].apply(lambda x: 1 if x == 'Germany' else 0)
-    data['country_Spain'] = data['country'].apply(lambda x: 1 if x == 'Spain' else 0)
-    data['gender'] = data['gender'].apply(lambda x: 1 if x == 'Male' else 0)
+    # 범주형과 수치형 특성 정의
+    categorical_features = ['country', 'gender', 'credit_card', 'active_member']
+    numeric_features = ['credit_score', 'age', 'tenure', 'balance', 'products_number', 'estimated_salary']
 
-    pt = PowerTransformer(method='yeo-johnson')
-    data['credit_score'] = pt.fit_transform(data['credit_score'].values.reshape(-1, 1))
-    data['age'] = pt.fit_transform(data['age'].values.reshape(-1, 1))
+    # 결측값 처리
+    imputer = SimpleImputer(strategy='mean')
+    data[numeric_features] = imputer.fit_transform(data[numeric_features])
 
-    scaler = StandardScaler()
-    data['credit_score'] = scaler.fit_transform(data['credit_score'].values.reshape(-1, 1))
-    data['age'] = scaler.fit_transform(data['age'].values.reshape(-1, 1))
-    data['balance'] = scaler.fit_transform(data['balance'].values.reshape(-1, 1))
-    data['estimated_salary'] = scaler.fit_transform(data['estimated_salary'].values.reshape(-1, 1))
+    # 전처리
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', StandardScaler(), numeric_features),
+            ('cat', OneHotEncoder(), categorical_features)
+        ])
 
-    return data
+    preprocessed_data = preprocessor.fit_transform(data)
+    preprocessed_df = pd.DataFrame(preprocessed_data, columns=numeric_features + list(preprocessor.named_transformers_['cat'].get_feature_names_out(categorical_features)))
+
+    return preprocessed_df
 
 # 모델 정의
 class ChurnModel(nn.Module):
