@@ -3,9 +3,18 @@ import pandas as pd
 import joblib
 import warnings
 import pickle
-import groq
+import torch
+from groq import Groq
 from sklearn.preprocessing import PowerTransformer, StandardScaler
+from inho_model import load_data, preprocess_data, load_model, predict, ChurnModel
+
 warnings.filterwarnings("ignore")
+
+# Groq API 키 설정
+GROQ_API_KEY = "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"
+
+# Groq 클라이언트 초기화
+client = Groq(api_key=GROQ_API_KEY)
 
 # 스타일 설정
 st.set_page_config(page_title="은행 고객 이탈 예측", layout="wide")
@@ -42,8 +51,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-
-def predict_churn(filtered_data, model_select:str, df=pd.read_csv('./data/Bank Customer Churn Prediction.csv')):  # df 하드코딩 했습니다
+def predict_churn(filtered_data, model_select:str, df=pd.read_csv('./data/Bank Customer Churn Prediction.csv')):
     if model_select == '민경':
         # customer_id 컬럼이 있다면 제거
         if 'customer_id' in filtered_data.columns:
@@ -104,6 +112,18 @@ def predict_churn(filtered_data, model_select:str, df=pd.read_csv('./data/Bank C
 
         return predictions, probabilities
 
+    elif model_select == 'inho_DL':
+        # 데이터 전처리
+        processed_data = preprocess_data(filtered_data)
+        
+        # 모델 불러오기
+        model = load_model('./model/churn_model.pth')
+
+        # 예측 수행
+        predictions, probabilities = predict(model, processed_data)
+
+        return predictions, probabilities
+
 def get_churn_reasons_and_solutions(risk_level, num_customers, input_parameters, high_risk, medium_risk, low_risk, high_risk_info, medium_risk_info, low_risk_info, filters):
     # 입력 파라미터를 요약하여 크기를 줄임
     
@@ -155,7 +175,7 @@ def main():
     st.title('은행 고객 이탈 예측 시스템')
     
     # 데이터 로드
-    df = pd.read_csv('./data/Bank Customer Churn Prediction.csv')
+    df = load_data('./data/Bank Customer Churn Prediction.csv')
     
     # 표시할 컬럼 설정
     display_columns = ['customer_id', 'country', 'age', 'balance', '이탈 예측', '이탈 확률']
@@ -246,7 +266,7 @@ def main():
     # 예측 버튼과 모델 선택 박스
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        model_select = st.selectbox('모델 선택', ['민경', '윤홍'], index=0)
+        model_select = st.selectbox('모델 선택', ['민경', '윤홍', 'inho_DL'], index=0)
         if st.button('이탈 예측하기', use_container_width=True):
             if len(filtered_df) > 0:
                 with st.spinner('예측 중...'):
@@ -524,3 +544,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
