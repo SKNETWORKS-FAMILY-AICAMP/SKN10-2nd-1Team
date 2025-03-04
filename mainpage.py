@@ -153,52 +153,83 @@ def predict_churn(filtered_data, model_select:str, df=pd.read_csv('./data/Bank C
 
         return predictions, probabilities
 
-def get_churn_reasons_and_solutions(risk_level, num_customers, input_parameters, high_risk, medium_risk, low_risk, high_risk_info, medium_risk_info, low_risk_info, filters):
-    # 입력 파라미터를 요약하여 크기를 줄임
+def generate_churn_analysis_data(results_df):
+    """ 모델 예측 결과 기반으로 위험도별 주요 분석 데이터를 생성 """
+    
+    results_df["risk_level"] = pd.cut(results_df["이탈 확률"], bins=[0, 0.4, 0.7, 1.0], labels=["낮음", "중간", "높음"])
+    risk_counts = results_df["risk_level"].value_counts().to_dict()
+    risk_group_means = results_df.groupby("risk_level")[["credit_score", "balance", "estimated_salary"]].mean().to_dict()
+
+    results_df["age_group"] = pd.cut(results_df["age"], bins=[18, 30, 40, 50, 60, 100], labels=["20대", "30대", "40대", "50대", "60대 이상"])
+    age_churn_rates = results_df.groupby("age_group")["이탈 확률"].mean() * 100
+    country_churn_rates = results_df.groupby("country")["이탈 확률"].mean() * 100
+    gender_churn_rates = results_df.groupby("gender")["이탈 확률"].mean() * 100
+
+    return {
+        "risk_counts": risk_counts,
+        "risk_group_means": risk_group_means,
+        "age_churn_rates": age_churn_rates.to_dict(),
+        "country_churn_rates": country_churn_rates.to_dict(),
+        "gender_churn_rates": gender_churn_rates.to_dict()
+    }
+
+def generate_prompt_from_analysis(analysis_data):
+    """ 분석된 데이터를 바탕으로 Groq API 요청을 위한 프롬프트 생성 """
     
     prompt = f"""
-    다음 입력을 기반으로 반드시 **한국어**를 사용하여 이탈 원인 및 해결 방안을 작성하시오.:
-    위험 수준: {risk_level}
-    고객 수: {num_customers}
-    높은 위험: 이탈 확률 70% 이상
-    중간 위험: 이탈 확률 40% ~ 70% 미만
-    낮은 위험: 이탈 확률 40% 미만
-    높은 위험 고객 수: {high_risk}
-    중간 위험 고객 수: {medium_risk}
-    낮은 위험 고객 수: {low_risk}
-    높은 위험 고객 정보: {high_risk_info}
-    중간 위험 고객 정보: {medium_risk_info}
-    낮은 위험 고객 정보: {low_risk_info}
-    필터 정보: {filters}
-    주요 관찰 결과:
-    - 나이가 많은 고객과 높은 계좌 잔액을 가진 고객은 이탈 확률이 높습니다.
-    - 활동적인 회원은 이탈 확률이 낮습니다.
+    ### 고객 이탈 분석 요청 (한국어로 작성)
+    주어진 데이터를 바탕으로 고객 이탈 원인과 해결 방안을 도출하시오.
+    # 돈단위는 유로(€)로 표기합니다.
+    ### 🔹 기본 정보
+    - 총 고객 수: {sum(analysis_data["risk_counts"].values())}명
+    - 높은 위험 고객 수: {analysis_data["risk_counts"].get("높음", 0)}명
+    - 중간 위험 고객 수: {analysis_data["risk_counts"].get("중간", 0)}명
+    - 낮은 위험 고객 수: {analysis_data["risk_counts"].get("낮음", 0)}명
 
-    출력 형식:
-    원인
+    ### 🔹 위험 수준별 고객 특성
+    📌 **높은 위험 고객**
+    - 평균 신용 점수: {analysis_data["risk_group_means"]["credit_score"].get("높음", "N/A")}
+    - 평균 계좌 잔액: {analysis_data["risk_group_means"]["balance"].get("높음", "N/A")}
+    - 평균 연봉: {analysis_data["risk_group_means"]["estimated_salary"].get("높음", "N/A")}
+
+    📌 **중간 위험 고객**
+    - 평균 신용 점수: {analysis_data["risk_group_means"]["credit_score"].get("중간", "N/A")}
+    - 평균 계좌 잔액: {analysis_data["risk_group_means"]["balance"].get("중간", "N/A")}
+    - 평균 연봉: {analysis_data["risk_group_means"]["estimated_salary"].get("중간", "N/A")}
+
+    📌 **낮은 위험 고객**
+    - 평균 신용 점수: {analysis_data["risk_group_means"]["credit_score"].get("낮음", "N/A")}
+    - 평균 계좌 잔액: {analysis_data["risk_group_means"]["balance"].get("낮음", "N/A")}
+    - 평균 연봉: {analysis_data["risk_group_means"]["estimated_salary"].get("낮음", "N/A")}
+
+    ### 🔹 연령대별, 국가별, 성별 이탈률
+    📌 **연령대별 이탈률 (%)**
+    {analysis_data["age_churn_rates"]}
+
+    📌 **국가별 이탈률 (%)**
+    {analysis_data["country_churn_rates"]}
+
+    📌 **성별 이탈률 (%)**
+    {analysis_data["gender_churn_rates"]}
+
+
+    ### 응답 형식 (항상 이 형식 유지)
+    원인이 수치적 데이터와 관련있다면 수치적으로 분석할것
+
     - 원인 1
+        - 설명
+        - 해결방안
     - 원인 2
+        - 설명
+        - 해결방안
     - 원인 3
-    - 원인 4
+        - 설명
+        - 해결방안
 
-    해결방안
-    - 해결방안 1
-    - 해결방안 2
-    - 해결방안 3
-    - 해결방안 4
     """
-    chat_completion = client.chat.completions.create(
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        model="qwen-2.5-coder-32b",
-    )
-    response = chat_completion.choices[0].message.content
 
-    return response
+
+    return prompt
 
 def main():
     st.title('은행 고객 이탈 예측 시스템')
@@ -496,21 +527,22 @@ def main():
                         "활성 회원": active_member
                     }
                     
-                    # Groq API를 사용하여 이탈 원인 및 해결 방안 제공
-                    churn_reasons_solutions = get_churn_reasons_and_solutions(
-                        "전체", 
-                        len(results_df), 
-                        results_df.to_dict(), 
-                        high_risk, 
-                        medium_risk, 
-                        low_risk,
-                        high_risk_info,
-                        medium_risk_info,
-                        low_risk_info,
-                        filters
-                    )
+                                        # 분석 데이터 생성
+                    analysis_data = generate_churn_analysis_data(results_df)
+
+                    # Groq API 프롬프트 생성
+                    churn_analysis_prompt = generate_prompt_from_analysis(analysis_data)
+
+                    # Groq API 요청
+                    churn_reasons_solutions = client.chat.completions.create(
+                        messages=[{"role": "user", "content": churn_analysis_prompt}],
+                        model="qwen-2.5-coder-32b",
+                    ).choices[0].message.content
+
+                    # Streamlit에 표시
                     st.markdown("### 고객 이탈 원인 및 해결 방안")
                     st.markdown(churn_reasons_solutions)
+
                     # 위험도 기준 설명
                    
 
