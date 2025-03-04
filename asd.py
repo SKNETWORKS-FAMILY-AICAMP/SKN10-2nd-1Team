@@ -4,7 +4,7 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import accuracy_score
-from inho_model import load_model
+from module.inho_model import load_model
 
 # CUDA 설정
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
