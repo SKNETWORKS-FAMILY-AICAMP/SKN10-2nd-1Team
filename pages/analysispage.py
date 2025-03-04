@@ -9,7 +9,7 @@ plt.rcParams['font.size'] = 12
 
 # 파일 로드
 def load_data():
-    file_path = "Bank Customer Churn Prediction(분석)2.xlsx"
+    file_path = "./data/Bank Customer Churn Prediction(분석)2.xlsx"
     xls = pd.ExcelFile(file_path)
     df = pd.read_excel(xls, sheet_name='Bank Customer Churn Prediction')
     return df
