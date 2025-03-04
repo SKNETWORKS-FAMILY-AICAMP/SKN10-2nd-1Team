@@ -79,6 +79,7 @@
 - 데이터 유형: 5개의 범주형 데이터, 7개의 수치형 데이터
   
  **2) 결측치 확인**
+ ![결측치](./img/Missing_values.png)
 - 결측치 확인 결과 : 결측치가 없음
   
  **3) 데이터 분석**
@@ -93,10 +94,9 @@
 ![tenure](./img/tenure.png)
 ![balance](./img/balance.png)
 ![hitmap](./img/hitmap.png)
+![full_count](./img/full_count.png)
 ![GB_feature](./img/GB_feature.png)
 ![RF_feature](./img/RF_feature.png)
-![full_count](./img/full_count.png)
-
 
 
 
