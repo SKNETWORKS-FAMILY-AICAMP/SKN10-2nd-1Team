@@ -77,8 +77,10 @@ def predict_churn(filtered_data, model_select:str, df=pd.read_csv('./data/Bank C
 
         pt = PowerTransformer(method='yeo-johnson')
         pt.fit_transform(df['credit_score'].values.reshape(-1, 1))
+        df['credit_score'] = pt.transform(df['credit_score'].values.reshape(-1,1))
         filtered_data['credit_score'] = pt.transform(filtered_data['credit_score'].values.reshape(-1,1))
         pt.fit_transform(df['age'].values.reshape(-1, 1))
+        df['age'] = pt.transform(df['age'].values.reshape(-1,1))
         filtered_data['age'] = pt.transform(filtered_data['age'].values.reshape(-1,1))
 
         scaler = StandardScaler()
