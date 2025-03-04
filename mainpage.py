@@ -56,7 +56,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def predict_churn(filtered_data, model_select:str, df=pd.read_csv('./data/Bank Customer Churn Prediction.csv')):
-    if model_select == 'Gradient Boosting':
+    if model_select == 'Gradient Boosting (AUC: 0.8585)':
         # customer_id 컬럼이 있다면 제거
         if 'customer_id' in filtered_data.columns:
             filtered_data = filtered_data.drop('customer_id', axis=1)
@@ -77,10 +77,10 @@ def predict_churn(filtered_data, model_select:str, df=pd.read_csv('./data/Bank C
         # 예측 수행
         predictions = pipeline.predict(X_new)
         probabilities = pipeline.predict_proba(X_new)[:, 1]
-        
+
         return predictions, probabilities
     
-    elif model_select == 'Random Forest':
+    elif model_select == 'Random Forest (AUC: 0.8589)':
         # 전처리
         filtered_data['country_France'] = filtered_data['country'].apply(lambda x: 1 if x == 'France' else 0)
         filtered_data['country_Germany'] = filtered_data['country'].apply(lambda x: 1 if x == 'Germany' else 0)
@@ -118,7 +118,7 @@ def predict_churn(filtered_data, model_select:str, df=pd.read_csv('./data/Bank C
 
         return predictions, probabilities
 
-    if model_select == 'Deep Learning':
+    if model_select == 'Deep Learning (AUC: 0.8612)':
         # 범주형과 수치형 특성 정의
         categorical_features = ['country', 'gender', 'credit_card', 'active_member']
         numeric_features = ['credit_score', 'age', 'tenure', 'balance', 'products_number', 'estimated_salary']
@@ -324,11 +324,8 @@ def main():
     # 예측 버튼과 모델 선택 박스
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        model_select = st.selectbox('모델 선택', ['Gradient Boosting', 'Random Forest', 'Deep Learning'], index=0)
+        model_select = st.selectbox('모델 선택', ['Gradient Boosting (AUC: 0.8585)', 'Random Forest (AUC: 0.8589)', 'Deep Learning (AUC: 0.8612)'], index=0)
         if st.button('이탈 예측하기', use_container_width=True):
-            accuracy = accuracy_dict[model_select]
-            auc = auc_dict[model_select]
-
             if len(filtered_df) > 0:
                 with st.spinner('예측 중...'):
                     results_df = filtered_df.copy()
@@ -375,7 +372,7 @@ def main():
                     """, unsafe_allow_html=True)
                     
                     # 메트릭을 5개의 동일한 크기 컬럼으로 나누기
-                    col1, col2, col3, col4, col5, col6, col7 = st.columns([3,2,2,2,2,2,2])
+                    col1, col2, col3, col4, col5 = st.columns(5)
                     
                     with col1:
                         st.metric(
@@ -411,17 +408,6 @@ def main():
                             f"{(low_risk/total_customers)*100:.1f}%"
                         )
 
-                    with col6:
-                        st.metric(
-                            "Accuracy",
-                            f"{accuracy}",
-                        )
-
-                    with col7:
-                        st.metric(
-                            "AUC",
-                            f"{auc}",
-                        )
                     # 구분선 추가
                     st.markdown("---")
                     
