@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import joblib
 import warnings
+import pickle
+from sklearn.preprocessing import PowerTransformer, StandardScaler
 warnings.filterwarnings("ignore")
 
 # 스타일 설정
@@ -39,90 +41,73 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🏦 은행 고객 이탈 예측")
-st.markdown("---")
 
-# 파일 경로
-file_path = "Bank Customer Churn Prediction.csv"
+def predict_churn(filtered_data, model_select:str, df=pd.read_csv('./data/Bank Customer Churn Prediction.csv')):  # df 하드코딩 했습니다
+    if model_select == '민경':
+        # customer_id 컬럼이 있다면 제거
+        if 'customer_id' in filtered_data.columns:
+            filtered_data = filtered_data.drop('customer_id', axis=1)
+        
+        # churn 컬럼이 있다면 제거
+        if 'churn' in filtered_data.columns:
+            filtered_data = filtered_data.drop('churn', axis=1)
+        
+        # 원-핫 인코딩 적용
+        X_new = pd.get_dummies(filtered_data, drop_first=True)
+        
+        # 저장된 모델 불러오기
+        try:
+            pipeline = joblib.load('./model/churn_prediction_model.joblib')
+        except FileNotFoundError:
+            raise Exception("모델 파일을 찾을 수 없습니다. 먼저 모델을 학습하고 저장해주세요.")
+        
+        # 예측 수행
+        predictions = pipeline.predict(X_new)
+        probabilities = pipeline.predict_proba(X_new)[:, 1]
+        
+        return predictions, probabilities
+    
+    elif model_select == '윤홍':
+        # 전처리
+        filtered_data['country_France'] = filtered_data['country'].apply(lambda x: 1 if x == 'France' else 0)
+        filtered_data['country_Germany'] = filtered_data['country'].apply(lambda x: 1 if x == 'Germany' else 0)
+        filtered_data['country_Spain'] = filtered_data['country'].apply(lambda x: 1 if x == 'Spain' else 0)
 
-# 데이터 불러오기
-df = pd.read_csv(file_path)
+        filtered_data['gender'] = filtered_data['gender'].apply(lambda x: 1 if x == 'Male' else 0)
 
-# 컬럼명 매핑
-df.columns = ["Customer ID", "Credit Score", "Country", "Gender", "Age", "Tenure", "Balance", "Products Number", "Credit Card", "Active Member", "Estimated Salary", "Churn"]
+        pt = PowerTransformer(method='yeo-johnson')
+        pt.fit_transform(df['credit_score'].values.reshape(-1, 1))
+        filtered_data['credit_score'] = pt.transform(filtered_data['credit_score'].values.reshape(-1,1))
+        pt.fit_transform(df['age'].values.reshape(-1, 1))
+        filtered_data['age'] = pt.transform(filtered_data['age'].values.reshape(-1,1))
 
-# 중앙 정렬을 위한 컨테이너
-with st.container():
-    st.header("🔍 필터 옵션")
-    
-    col1, col2, col3, col4, col5 = st.columns(5)
-    
-    with col1:
-        country = st.radio("🌍 거주 국가", df["Country"].unique())
-    with col2:
-        gender = st.radio("⚧ 성별", df["Gender"].unique())
-    with col3:
-        credit_card = st.radio("💳 신용카드 보유 여부", [0, 1])
-    with col4:
-        active_member = st.radio("🟢 활성 회원 여부", [0, 1])
-    with col5:
-        churn = st.radio("🔄 고객 이탈 여부", [0, 1])
-    
-    credit_score_range = st.slider("📊 신용점수", int(df["Credit Score"].min()), int(df["Credit Score"].max()), (int(df["Credit Score"].min()), int(df["Credit Score"].max())))
-    age_range = st.slider("👤 나이", int(df["Age"].min()), int(df["Age"].max()), (int(df["Age"].min()), int(df["Age"].max())))
-    tenure_range = st.slider("📅 은행 이용 기간(년)", int(df["Tenure"].min()), int(df["Tenure"].max()), (int(df["Tenure"].min()), int(df["Tenure"].max())))
-    balance_range = st.slider("💰 계좌 잔액", float(df["Balance"].min()), float(df["Balance"].max()), (float(df["Balance"].min()), float(df["Balance"].max())))
-    products_number_range = st.slider("🛍 보유 상품 수", int(df["Products Number"].min()), int(df["Products Number"].max()), (int(df["Products Number"].min()), int(df["Products Number"].max())))
-    estimated_salary_range = st.slider("💵 예상 연봉", float(df["Estimated Salary"].min()), float(df["Estimated Salary"].max()), (float(df["Estimated Salary"].min()), float(df["Estimated Salary"].max())))
+        scaler = StandardScaler()
+        scaler.fit_transform(df['credit_score'].values.reshape(-1, 1))
+        filtered_data['credit_score'] = scaler.transform(filtered_data['credit_score'].values.reshape(-1,1))
+        scaler.fit_transform(df['age'].values.reshape(-1, 1))
+        filtered_data['age'] = scaler.transform(filtered_data['age'].values.reshape(-1,1))
+        scaler.fit_transform(df['balance'].values.reshape(-1, 1))
+        filtered_data['balance'] = scaler.transform(filtered_data['balance'].values.reshape(-1,1))
+        scaler.fit_transform(df['estimated_salary'].values.reshape(-1, 1))
+        filtered_data['estimated_salary'] = scaler.transform(filtered_data['estimated_salary'].values.reshape(-1,1))
 
-filtered_df = df[(df["Credit Score"] >= credit_score_range[0]) & (df["Credit Score"] <= credit_score_range[1]) &
-                 (df["Age"] >= age_range[0]) & (df["Age"] <= age_range[1]) &
-                 (df["Tenure"] >= tenure_range[0]) & (df["Tenure"] <= tenure_range[1]) &
-                 (df["Balance"] >= balance_range[0]) & (df["Balance"] <= balance_range[1]) &
-                 (df["Products Number"] >= products_number_range[0]) & (df["Products Number"] <= products_number_range[1]) &
-                 (df["Estimated Salary"] >= estimated_salary_range[0]) & (df["Estimated Salary"] <= estimated_salary_range[1]) &
-                 (df["Country"] == country) & (df["Gender"] == gender) &
-                 (df["Credit Card"] == credit_card) &
-                 (df["Active Member"] == active_member) &
-                 (df["Churn"] == churn)]
+        # 모델 불러오기
+        model = pickle.load(open("./model/randomforest_model.pkl", "rb"))
 
-# 필터링된 데이터 출력
-st.subheader("📊 필터링된 데이터")
-st.dataframe(filtered_df.style.set_properties(**{"background-color": "#f9f9f9", "border": "1px solid #ddd", "color": "black"}))
+        # 예측
+        X = filtered_data[['credit_score', 'gender', 'age', 'tenure', 'balance',
+                           'products_number', 'credit_card', 'active_member', 'estimated_salary',
+                           'country_France', 'country_Germany', 'country_Spain']]
+        predictions = model.predict(X)
+        probabilities = model.predict_proba(X)[:, 1]
 
-# 필터링된 데이터를 CSV로 저장하고 다운로드 버튼 추가
-if not filtered_df.empty:
-    csv = filtered_df.to_csv(index=False).encode('utf-8')
-    st.download_button(label="📥 필터링된 데이터 다운로드", data=csv, file_name="filtered_data.csv", mime="text/csv")
-def predict_churn(filtered_data):
-    # customer_id 컬럼이 있다면 제거
-    if 'customer_id' in filtered_data.columns:
-        filtered_data = filtered_data.drop('customer_id', axis=1)
-    
-    # churn 컬럼이 있다면 제거
-    if 'churn' in filtered_data.columns:
-        filtered_data = filtered_data.drop('churn', axis=1)
-    
-    # 원-핫 인코딩 적용
-    X_new = pd.get_dummies(filtered_data, drop_first=True)
-    
-    # 저장된 모델 불러오기
-    try:
-        pipeline = joblib.load('churn_prediction_model.joblib')
-    except FileNotFoundError:
-        raise Exception("모델 파일을 찾을 수 없습니다. 먼저 모델을 학습하고 저장해주세요.")
-    
-    # 예측 수행
-    predictions = pipeline.predict(X_new)
-    probabilities = pipeline.predict_proba(X_new)[:, 1]
-    
-    return predictions, probabilities
+        return predictions, probabilities
 
 def main():
     st.title('은행 고객 이탈 예측 시스템')
     
     # 데이터 로드
-    df = pd.read_csv('Bank Customer Churn Prediction.csv')
+    df = pd.read_csv('./data/Bank Customer Churn Prediction.csv')
     
     # 표시할 컬럼 설정
     display_columns = ['customer_id', 'country', 'age', 'balance', '이탈 예측', '이탈 확률']
@@ -210,13 +195,14 @@ def main():
     st.write(f"필터링된 고객 수: {len(filtered_df):,}명")
     st.dataframe(filtered_df)
     
-    # 예측 버튼
+    # 예측 버튼과 모델 선택 박스
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
+        model_select = st.selectbox('모델 선택', ['민경', '윤홍'], index=0)
         if st.button('이탈 예측하기', use_container_width=True):
             if len(filtered_df) > 0:
                 with st.spinner('예측 중...'):
-                    predictions, probabilities = predict_churn(filtered_df)
+                    predictions, probabilities = predict_churn(filtered_df, model_select)
                     
                     # 결과를 데이터프레임에 추가
                     results_df = filtered_df.copy()
