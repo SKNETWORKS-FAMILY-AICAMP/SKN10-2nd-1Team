@@ -70,7 +70,7 @@
 ### 기대 효과
 | 기대효과 |내용|
 |------|---|
-|고객이탈|이탈 가능성이 높은 고객을 조기에 발견하여 맞춤형 프로모션 및 상담 제공|
+|고객이탈 방지|이탈 가능성이 높은 고객을 조기에 발견하여 맞춤형 프로모션 및 상담 제공|
 |비용절감|고객 유지 비용 절감 및 신규 고객 유치 비용 최소화|
 |비즈니스 성장|데이터 기반 의사결정을 통한 은행의 경쟁력 강화 및 고객 만족도 향상|
 
@@ -89,12 +89,10 @@
 |데이터 분석 & 학습|<img src="https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=Pandas&logoColor=white" /> <img src="https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=NumPy&logoColor=white" /> <img src="https://img.shields.io/badge/Matplotlib-11557C?style=for-the-badge&logo=Matplotlib&logoColor=white" /> <img src="https://img.shields.io/badge/Seaborn-4C8CBF?style=for-the-badge&logo=Seaborn&logoColor=white" /> <img src="https://img.shields.io/badge/Scikit%20Learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white" />|
 |대시보드|<img src="https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=white" />|
 
-# 3. 데이터 전처리 
+# 3. 데이터 내용 확인
 - ABC 은행의 고객 이탈 데이터 <br>
 - 출처: https://www.kaggle.com/datasets/gauravtopre/bank-customer-churn-dataset
 <br>
-
- **1) 데이터 내용 확인**
 
 | 변수명             | 변수 설명                                             | 변수 타입   |
 |-------------------|----------------------------------------------------|------------------|
@@ -115,30 +113,32 @@
 - 데이터 크기: 총 10,000명의 고객 데이터, 12개의 변수 (2개의 object형 변수, 8개의 int형 변수, 2개의 float형 변수) <br>
 - 데이터 유형: 5개의 범주형 데이터, 7개의 수치형 데이터
   
- **2) 결측치 확인**
- 
- ![결측치](./img/Missing_values.png)
- 
-- 결측치 확인 결과 : 결측치가 없음
+# 4. 데이터 전처리 과정
+
+**1. 데이터 요약 및 탐색**
+- 특정 수치형 변수(신용점수, 잔액, 나이, 예상 연봉)의 기본 통계량(개수, 평균, 표준편차, 최소값, 25%/50%/75% 백분위수, 최대값)을 확인합니다.
+- 효과 : 데이터 분포, 중앙값, 범위 등을 파악하여 이상치나 결측치 등을 확인할 수 있습니다.
   
- **3) 데이터 분석**
- 
-![이탈률](./img/churn.png) 
-![나라](./img/country.png)
-![성별](./img/gender.png)
-![age](./img/age.png)
-![credit_score](./img/credit_score.png)
-![credit_card](./img/credit_card.png)
-![products_num](./img/products_num.png)
-![tenure](./img/tenure.png)
-![balance](./img/balance.png)
-![hitmap](./img/hitmap.png)
-![full_count](./img/full_count.png)
-![GB_feature](./img/GB_feature.png)
-![RF_feature](./img/RF_feature.png)
+**2. 값 제한 처리**
+- 목적 : 'products_number' 열의 값이 3 이상이면 3으로 제한하고, 그렇지 않으면 원래 값을 유지합니다.
+- 효과 : 특정 변수의 상한을 정하여 극단적인 값들이 분석이나 모델링에 미치는 영향을 줄입니다.
+  
+**3. 수치형 변수의 범주화**
+- 목적 : 신용점수, 잔액, 나이 등 연속형 데이터를 의미 있는 구간으로 나누어 데이터를 단순화하고 해석하기 쉽게 합니다.
+- 효과 : 범주화된 데이터는 그룹별 비교를 용이하게 하고 이상치의 영향을 줄여 모델의 성능을 향상시킵니다.
+  
+**4. 데이터 시각화 및 이상치 처리**
+- 목적 : 연속형 데이터를 몇 개의 범주로 나누어 데이터를 단순화하고 이해하기 쉽게 만듭니다.
+- 효과 : 모델 성능 개선과 그룹별 분석을 용이하게 하여 이상치의 영향을 줄입니다.
+  
+# 5. LNM 
 
+- **복잡한 패턴 학습:** LNM은 딥러닝의 특성을 활용하여 데이터 내 복잡한 비선형 패턴과 변수 간 상호작용을 효과적으로 학습, 고객 이탈 예측 문제에 적합합니다.
+- **특성 공학 감소:** LNM은 자동으로 중요한 특성을 추출하므로, 별도의 복잡한 특성 가공 과정 없이도 효율적인 모델링이 가능합니다.
+- **모델 성능:** 초기 실험에서 LNM은 랜덤 포레스트 등 전통적인 모델보다 높은 AUC와 정확도를 보이며, 실제 운영 환경에서 신뢰성 있는 예측 결과를 제공했습니다.
 
+# 오류 리스트
 
-# 4. 실행 결과
+# 6. 실행 결과
 
-# 5.  한줄 회고
+# 7.  한줄 회고
