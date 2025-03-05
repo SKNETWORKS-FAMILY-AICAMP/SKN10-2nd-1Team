@@ -20,6 +20,29 @@
       <td align=center><b>황인호</b></td>
     </tr>
     <br>
+ <tr>
+    <th> 
+      <b>프로젝트 총괄</b><br>
+      <b>머신러닝 모델 개발</b><br>
+      <b>페이지 제작</b>
+    </th>
+    <th>
+      <b>머신러닝 모델 개발</b><br>
+      <b>페이지 제작</b>
+    </th>
+    <th>
+      <b>데이터 분석</b><br>
+      <b>페이지 제작</b>
+    </th>
+    <th>
+      <b>페이지 제작</b><br>
+      <b>데이터 분석</b>
+    </th>
+    <th>
+      <b>딥러닝 모델 개발</b><br>
+      <b>페이지 제작</b>
+    </th>
+  </tr>
   <tr>
       <td><a href="https://github.com/baeminkyeong"><div align=center>@baeminkyeong</div></a></td>
       <td><a href="https://github.com/yuuunong"><div align=center>@yuuunong</div></a></td>
