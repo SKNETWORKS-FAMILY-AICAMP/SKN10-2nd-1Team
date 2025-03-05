@@ -5,7 +5,7 @@
  개발기간: 25.02.19 - 25.03.05
 <br>
 
-# **0. 팀 소개**
+# **1. 팀 소개**
 
 ### 팀명 : 1 팀
 ### 팀원 소개
@@ -33,7 +33,7 @@
 <br>
 
 
-# 1. 프로젝트 개요
+# 2. 프로젝트 개요
 
 ### 프로젝트
 - 은행 가입고객 이탈자 분석 및 예측
@@ -80,7 +80,7 @@
 - 데이터 기반의 **예측 모델을 활용**하여 고객 맞춤형 전략을 수립함으로써 전통적인 은행의 지속 가능한 성장을 도모하는 것이 본 프로젝트의 최종 목표입니다.
 
 
-# 2. 기술 스택
+# 3. 기술 스택
 
 | 분야 |기술|
 |------|---|
@@ -89,7 +89,7 @@
 |데이터 분석 & 학습|<img src="https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=Pandas&logoColor=white" /> <img src="https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=NumPy&logoColor=white" /> <img src="https://img.shields.io/badge/Matplotlib-11557C?style=for-the-badge&logo=Matplotlib&logoColor=white" /> <img src="https://img.shields.io/badge/Seaborn-4C8CBF?style=for-the-badge&logo=Seaborn&logoColor=white" /> <img src="https://img.shields.io/badge/Scikit%20Learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white" />|
 |대시보드|<img src="https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=Streamlit&logoColor=white" />|
 
-# 3. 데이터 내용 확인
+# 4. 데이터 내용 확인
 - ABC 은행의 고객 이탈 데이터 <br>
 - 출처: https://www.kaggle.com/datasets/gauravtopre/bank-customer-churn-dataset
 <br>
@@ -113,7 +113,7 @@
 - 데이터 크기: 총 10,000명의 고객 데이터, 12개의 변수 (2개의 object형 변수, 8개의 int형 변수, 2개의 float형 변수) <br>
 - 데이터 유형: 5개의 범주형 데이터, 7개의 수치형 데이터
   
-# 4. 데이터 전처리 과정
+# 5. 데이터 전처리 과정
 
 **1. 데이터 요약 및 탐색**
 - 특정 수치형 변수(신용점수, 잔액, 나이, 예상 연봉)의 기본 통계량(개수, 평균, 표준편차, 최소값, 25%/50%/75% 백분위수, 최대값)을 확인합니다.
@@ -141,7 +141,7 @@
 - **SMOTE (Synthetic Minority Over-sampling Technique):**  
   데이터 불균형 문제를 해결하기 위해 SMOTE를 적용하여 소수 클래스 데이터를 증강하였습니다. 이로 인해 클래스 간 균형이 개선되어, 특히 불균형 데이터셋에서 모델의 예측 성능이 향상되었습니다.
   
-# 5. LLM 
+# 6. LLM 
 
 - **복잡한 패턴 학습 :** 딥러닝의 특성을 활용하여 데이터 내 복잡한 비선형 패턴과 변수 간 상호작용을 효과적으로 학습, 고객 이탈 예측 문제에 적합합니다.
 - **특성 공학 감소 :** 자동으로 중요한 특성을 추출하므로, 별도의 복잡한 특성 가공 과정 없이도 효율적인 모델링이 가능합니다.
@@ -152,9 +152,9 @@
   딥러닝 모델은 대량의 데이터를 필요로 하며 복잡한 패턴을 학습하기 때문에, 80/20 또는 70/20/10 방식으로 데이터를 분리하고, transform 후 scaling 등 전처리 과정을 올바른 순서로 적용하는 것이 매우 중요합니다.
 - **스케일링 및 정규화:**  
   딥러닝 모델은 입력 데이터의 스케일에 민감하므로, StandardScaler나 MinMaxScaler를 사용해 정규화하면 학습의 안정성과 성능이 크게 향상됩니다.
-# 6. 실행 결과
+# 7. 실행 결과
 
-# 7.  회고
+# 8.  회고
 - **배민경 :**
   데이터 전처리부터 모델 스코어 향상에 집중하였습니다.<br> 모델 스코어 보다는 의미 있는 피쳐를 찾아내고분석하여 데이터를 알아가는 시간을 좀 더 보냈을면 좋았을 것 같습니다. 
 - **장윤홍 :**
