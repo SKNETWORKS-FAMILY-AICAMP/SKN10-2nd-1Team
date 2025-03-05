@@ -1,5 +1,5 @@
 # SKN10-2nd-1Team
-# [가입 고객 이탈 예측](https://www.kaggle.com/datasets/gauravtopre/bank-customer-churn-dataset/data)
+# [은행 고객 이탈 예측](https://www.kaggle.com/datasets/gauravtopre/bank-customer-churn-dataset/data)
  SK Networks AI Camp 10기
 
  개발기간: 25.02.19 - 25.03.05
