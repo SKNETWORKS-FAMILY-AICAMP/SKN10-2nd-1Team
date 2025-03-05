@@ -21,7 +21,7 @@ df.set_index("Age", inplace=True)
 df = df.apply(pd.to_numeric, errors='coerce')
 
 # 스트림릿 앱
-st.title("📊 Sheet2 (6) 연령별 이탈율 및 활동고객율 변화")
+st.title("📊 연령별 이탈율 및 활동고객율 변화")
 
 st.markdown(
     """

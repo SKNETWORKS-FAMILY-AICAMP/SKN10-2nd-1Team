@@ -37,10 +37,6 @@ if df is not None:
 
     st.title("📊 Bank Customer Churn Prediction 분석")
 
-    # 데이터 개요 보기
-    if st.checkbox("🔍 데이터 미리보기"):
-        st.dataframe(df)
-
     # 1. 고객 이탈 현황 분석
     if 'churn' in df.columns:
         st.subheader("📌 고객 이탈 현황")
@@ -61,7 +57,7 @@ if df is not None:
             ax.set_ylabel("고객 수")
             st.pyplot(fig)
 
-        st.write("📌 **여성 고객이 남성 고객보다 급여가 더 많음에도 이탈을 더 많이 함. (고객 관리 필요)**")
+        st.write("📌 **여성 고객이 남성 고객보다 급여가 더 많음에도 이탈을 더 많이 함. (고객 관리 필요)**\n")
 
     # 2. 성별별 고객 이탈률
     if 'gender' in df.columns and 'churn' in df.columns:
@@ -96,7 +92,8 @@ if df is not None:
             plt.title("연령대별 잔고 및 연봉 변화 (유지 고객)")
             st.pyplot(fig)
 
-            st.write("📌 **34~38세 유지 고객의 잔고 및 연봉이 가장 높고 이후 점차 감소함.**")
+            st.write("📌 **34~38세 유지 고객의 잔고 및 연봉이 가장 높고 이후 점차 감소함.**\n")
+
 
     # 4. 고객 이탈 분석 - 신용 점수
     if 'churn' in df.columns and 'credit_score' in df.columns:
@@ -105,7 +102,7 @@ if df is not None:
         sns.boxplot(x='churn', y='credit_score', data=df, ax=ax)
         st.pyplot(fig)
 
-        st.write("📌 **이탈 고객의 평균 신용 점수가 유지 고객보다 낮음.**")
+        st.write("📌 **이탈 고객의 평균 신용 점수가 유지 고객보다 낮음.**\n")
 
     # 5. 국가별 고객 이탈률
     if 'country' in df.columns and 'churn' in df.columns:
@@ -125,4 +122,34 @@ if df is not None:
         ax.set_ylabel("고객 수")
         st.pyplot(fig)
 
-        st.write("📌 **연령대별로 보면 특정 연령층에서 고객 수가 집중됨.**")
+        st.write("📌 **연령대별로 보면 특정 연령층에서 고객 수가 집중됨.**\n\n\n")
+
+    # 분석 설명 추가
+st.markdown("""
+    ### 🔍 **활동 고객과 이탈 관계**
+    ▪ 활동 고객과 이탈은 **음의 상관관계**\n
+    ▪ 비활동 고객이 금융 상품을 **이용하도록 혜택 제공 필요**\n\n\n
+    
+            
+    ### 💳 **금융 상품과 이탈 관계**
+    ▪ 신용카드 1개만 있는 고객이 **이탈 가능성 높음**\n
+    ▪ 금융 상품 2종 이상 유지 시 **이탈 감소** (입출금 통장 등 크로스셀링 필요)\n\n\n
+    
+            
+    ### 👩‍💼 **성별과 이탈 분석**
+    ▪ **여성 신용카드 고객**이 남성보다 이탈률 높음\n\n\n
+    
+            
+    ### 💰 **잔고 및 급여와 이탈**
+    ▪ 여성 고객이 남성보다 잔고 많지만 **이탈 더 많음** (고객 관리 필요)\n
+    ▪ **프랑스 남성 고객**은 잔고 가장 높고 이탈률 가장 적음\n
+    ▪ **독일 여성 고객**은 이탈 시 잔고가 높음 (고객 관리 필요)\n\n\n
+    
+            
+    ### 🔄 **신용카드 활성 고객 분석**
+    ▪ **장기 고객**의 이탈이 적음\n
+    ▪ 신용카드 **비활성 고객은 장기/단기 이탈률 높음** (상관관계 낮음)\n
+    ▪ 신용카드 활성 고객은 **단기 고객의 이탈이 높음** (장기 유지 필요)\n\n\n
+            
+            
+    """)
