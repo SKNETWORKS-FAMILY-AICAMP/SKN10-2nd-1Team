@@ -5,7 +5,7 @@ import numpy as np
 
 # 파일 로드
 def load_data():
-    file_path = "Bank Customer Churn Prediction(분석)2.xlsx"
+    file_path = "./data/Bank Customer Churn Prediction(분석)2.xlsx"
     sheet_name = "Sheet2 (4)"
     df = pd.read_excel(file_path, sheet_name=sheet_name, skiprows=31)  # 31번째 행부터 데이터 시작
     df = df.iloc[:, [1, 2, 3, 4, 6, 7]]  # 유효한 데이터 열 선택

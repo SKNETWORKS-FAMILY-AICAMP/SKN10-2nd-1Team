@@ -10,7 +10,7 @@ plt.rcParams['font.size'] = 12
 
 # 파일 로드 함수
 def load_data():
-    file_path = "Bank Customer Churn Prediction(분석)2.xlsx"
+    file_path = "./data/Bank Customer Churn Prediction(분석)2.xlsx"
     if not os.path.exists(file_path):
         st.error("파일을 찾을 수 없습니다. 파일을 업로드하세요.")
         return None
