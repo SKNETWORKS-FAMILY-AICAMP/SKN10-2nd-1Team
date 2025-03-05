@@ -21,7 +21,7 @@ df.set_index("Age", inplace=True)
 df = df.apply(pd.to_numeric, errors='coerce')
 
 # 스트림릿 앱
-st.title("📊 Sheet2 (4) 연령별 잔고 및 연봉 변화")
+st.title("📊 연령별 잔고 및 연봉 변화")
 
 st.markdown(
     """
