@@ -61,11 +61,6 @@ def setup_filters(df):
         default=[0, 1]
     )
     
-    churn = st.sidebar.multiselect(
-        '이탈 여부',
-        [0, 1],
-        default=[0, 1]
-    )
     
     filters = {
         'credit_score': credit_score,
@@ -77,7 +72,6 @@ def setup_filters(df):
         'products_number': products_number,
         'credit_card': credit_card,
         'active_member': active_member,
-        'churn': churn
     }
     
     return filters
@@ -92,8 +86,7 @@ def filter_data(df, filters):
         (df['gender'].isin(filters['gender'])) &
         (df['products_number'].isin(filters['products_number'])) &
         (df['credit_card'].isin(filters['credit_card'])) &
-        (df['active_member'].isin(filters['active_member'])) &
-        (df['churn'].isin(filters['churn']))
+        (df['active_member'].isin(filters['active_member'])) 
     ]
     
     return filtered_df

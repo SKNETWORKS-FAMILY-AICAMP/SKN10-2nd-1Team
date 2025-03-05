@@ -13,9 +13,14 @@ from module.analysis_utils import generate_churn_analysis_data, generate_prompt_
 from module.groq_utils import get_churn_reasons_solutions
 from module.filter_utils import setup_filters, filter_data  # Import the new module
 from module.display_utils import display_metrics, display_risk_customers, calculate_risk_info  # Import the new module
+import matplotlib.pyplot as plt
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 warnings.filterwarnings("ignore")
+
+# 한글 폰트 설정
+plt.rcParams['font.family'] = 'Malgun Gothic'  # 윈도우 사용자
+plt.rcParams['font.size'] = 12
 
 # 스타일 설정
 st.set_page_config(page_title="은행 고객 이탈 예측", layout="wide")

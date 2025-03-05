@@ -57,7 +57,7 @@ if df is not None:
             ax.set_ylabel("고객 수")
             st.pyplot(fig)
 
-        st.write("📌 **여성 고객이 남성 고객보다 급여가 더 많음에도 이탈을 더 많이 함. (고객 관리 필요)**\n")
+        st.write("▪ **여성 고객이 남성 고객보다 급여가 더 많음에도 이탈을 더 많이 함. (고객 관리 필요)**\n")
 
     # 2. 성별별 고객 이탈률
     if 'gender' in df.columns and 'churn' in df.columns:
@@ -92,7 +92,7 @@ if df is not None:
             plt.title("연령대별 잔고 및 연봉 변화 (유지 고객)")
             st.pyplot(fig)
 
-            st.write("📌 **34~38세 유지 고객의 잔고 및 연봉이 가장 높고 이후 점차 감소함.**\n")
+            st.write("▪ **34~38세 유지 고객의 잔고 및 연봉이 가장 높고 이후 점차 감소함.**\n")
 
 
     # 4. 고객 이탈 분석 - 신용 점수
@@ -102,7 +102,7 @@ if df is not None:
         sns.boxplot(x='churn', y='credit_score', data=df, ax=ax)
         st.pyplot(fig)
 
-        st.write("📌 **이탈 고객의 평균 신용 점수가 유지 고객보다 낮음.**\n")
+        st.write("▪ **이탈 고객의 평균 신용 점수가 유지 고객보다 낮음.**\n")
 
     # 5. 국가별 고객 이탈률
     if 'country' in df.columns and 'churn' in df.columns:
@@ -122,7 +122,7 @@ if df is not None:
         ax.set_ylabel("고객 수")
         st.pyplot(fig)
 
-        st.write("📌 **연령대별로 보면 특정 연령층에서 고객 수가 집중됨.**\n\n\n")
+        st.write("▪ **연령대별로 보면 특정 연령층에서 고객 수가 집중됨.**\n\n\n")
 
     # 분석 설명 추가
 st.markdown("""
