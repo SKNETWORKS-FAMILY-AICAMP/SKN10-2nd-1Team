@@ -153,6 +153,13 @@
 - **스케일링 및 정규화:**  
   딥러닝 모델은 입력 데이터의 스케일에 민감하므로, StandardScaler나 MinMaxScaler를 사용해 정규화하면 학습의 안정성과 성능이 크게 향상됩니다.
 # 7. 실행 결과
+![alt text](img/실행화면01.png)
+![alt text](img/실행화면02.png)
+![alt text](img/실행화면03.png)
+![alt text](img/실행화면04.png)
+![alt text](img/실행화면05.png)
+![alt text](img/실행화면06.png)
+![alt text](img/실행화면07.png)
 
 # 8.  회고
 - **배민경 :**
