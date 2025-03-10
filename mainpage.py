@@ -15,7 +15,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 warnings.filterwarnings("ignore")
 
 # Groq API 키 설정
-GROQ_API_KEY = "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"
+GROQ_API_KEY = "너의 api키"
 
 # Groq 클라이언트 초기화
 client = Groq(api_key=GROQ_API_KEY)
